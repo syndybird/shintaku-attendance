@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SHINTAKU ユーザー登録QR</title>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+  <style>
+    :root {
+      --line-green: #06c755;
+      --ink: #111827;
+      --muted: #6b7280;
+      --paper: #ffffff;
+      --bg: #f3f4f6;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue",
+        Arial, "Hiragino Sans", "Yu Gothic", "Meiryo", sans-serif;
+      color: var(--ink);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 32px;
+    }
+
+    .sheet {
+      width: 794px;
+      min-height: 1123px;
+      background: var(--paper);
+      border-radius: 28px;
+      padding: 72px 64px;
+      text-align: center;
+      box-shadow: 0 20px 60px rgba(15, 23, 42, 0.12);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .brand {
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      color: var(--muted);
+      margin-bottom: 18px;
+    }
+
+    .title {
+      font-size: 56px;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      margin: 0;
+    }
+
+    .accent {
+      width: 128px;
+      height: 8px;
+      background: var(--line-green);
+      border-radius: 999px;
+      margin: 28px auto 56px;
+    }
+
+    .qr-wrap {
+      background: #fff;
+      padding: 28px;
+      border-radius: 24px;
+      border: 1px solid #e5e7eb;
+      margin-bottom: 54px;
+    }
+
+    #qrcode {
+      width: 430px;
+      height: 430px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .main-text {
+      font-size: 38px;
+      font-weight: 800;
+      line-height: 1.45;
+      margin: 0 0 24px;
+    }
+
+    .sub-text {
+      font-size: 24px;
+      line-height: 1.7;
+      color: #374151;
+      margin: 0;
+    }
+
+    .button {
+      display: inline-block;
+      margin-top: 48px;
+      padding: 18px 44px;
+      border-radius: 999px;
+      background: var(--line-green);
+      color: #fff;
+      text-decoration: none;
+      font-size: 22px;
+      font-weight: 800;
+    }
+
+    .footer {
+      margin-top: auto;
+      padding-top: 56px;
+      font-size: 15px;
+      letter-spacing: 0.16em;
+      color: #9ca3af;
+      font-weight: 700;
+    }
+
+    @media print {
+      body {
+        background: #fff;
+        padding: 0;
+      }
+
+      .sheet {
+        width: 210mm;
+        min-height: 297mm;
+        border-radius: 0;
+        box-shadow: none;
+      }
+
+      .button {
+        display: none;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="sheet">
+    <div class="brand">SHINTAKU ATTENDANCE SYSTEM</div>
+
+    <h1 class="title">ユーザー登録</h1>
+
+    <div class="accent"></div>
+
+    <div class="qr-wrap">
+      <div id="qrcode"></div>
+    </div>
+
+    <p class="main-text">
+      LINEでQRを読み込み<br />
+      ユーザー登録してください
+    </p>
+
+    <p class="sub-text">
+      初回のみ登録が必要です。<br />
+      登録後、勤怠打刻が利用できます。
+    </p>
+
+    <a class="button" href="https://liff.line.me/2010109211-y1fJhsUQ?type=ユーザー登録">
+      登録ページを開く
+    </a>
+
+    <div class="footer">SCAN TO REGISTER</div>
+  </main>
+
+  <script>
+    new QRCode(document.getElementById("qrcode"), {
+      text: "https://liff.line.me/2010109211-y1fJhsUQ?type=ユーザー登録",
+      width: 430,
+      height: 430,
+      colorDark: "#111827",
+      colorLight: "#ffffff",
+      correctLevel: QRCode.CorrectLevel.H
+    });
+  </script>
+</body>
+</html>
