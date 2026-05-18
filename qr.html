@@ -4,6 +4,11 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>SHINTAKU QR出退勤</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700;800;900&family=Noto+Sans+JP:wght@500;700;800;900&display=swap" rel="stylesheet">
+
   <style>
     @page {
       size: A4;
@@ -16,46 +21,31 @@
 
     body {
       margin: 0;
-      background: #eaf3ff;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Sans", "Yu Gothic", "Noto Sans JP", sans-serif;
-      color: #183153;
+      background: #eef3f7;
+      color: #172033;
+      font-family: "Inter", "Noto Sans JP", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     }
 
     .sheet {
       width: 210mm;
       height: 297mm;
       margin: 0 auto;
-      padding: 12mm;
+      padding: 13mm;
       background:
-        radial-gradient(circle at 10% 8%, rgba(69, 183, 96, 0.16), transparent 18%),
-        radial-gradient(circle at 90% 14%, rgba(255, 91, 117, 0.14), transparent 20%),
-        linear-gradient(145deg, #ffffff 0%, #f7fbff 45%, #fffaf6 100%);
+        radial-gradient(circle at 12% 8%, rgba(44, 183, 113, 0.12), transparent 22%),
+        radial-gradient(circle at 88% 10%, rgba(245, 86, 116, 0.11), transparent 22%),
+        linear-gradient(145deg, #ffffff 0%, #f7fbff 52%, #fffafa 100%);
       position: relative;
       overflow: hidden;
     }
 
-    .sheet::before,
-    .sheet::after {
+    .sheet::before {
       content: "";
       position: absolute;
-      border-radius: 999px;
-      z-index: 0;
-    }
-
-    .sheet::before {
-      width: 70mm;
-      height: 70mm;
-      background: rgba(46, 125, 255, 0.08);
-      right: -24mm;
-      top: -20mm;
-    }
-
-    .sheet::after {
-      width: 82mm;
-      height: 82mm;
-      background: rgba(69, 183, 96, 0.08);
-      left: -32mm;
-      bottom: -24mm;
+      inset: 8mm;
+      border: 0.4mm solid rgba(23, 32, 51, 0.06);
+      border-radius: 10mm;
+      pointer-events: none;
     }
 
     .content {
@@ -64,136 +54,192 @@
       height: 100%;
       display: flex;
       flex-direction: column;
-      gap: 7mm;
+      gap: 8mm;
     }
 
     header {
       text-align: center;
-      padding: 5mm 4mm 3mm;
+      padding-top: 3mm;
     }
 
-    .badge {
-      display: inline-block;
-      background: #173b70;
-      color: #fff;
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 2mm;
+      padding: 2mm 7mm;
       border-radius: 999px;
-      padding: 2.5mm 9mm;
+      background: #172033;
+      color: #fff;
+      font-size: 12pt;
       font-weight: 800;
-      letter-spacing: 0.06em;
-      font-size: 14pt;
-      box-shadow: 0 5px 14px rgba(23, 59, 112, 0.18);
+      letter-spacing: .08em;
+      box-shadow: 0 10px 24px rgba(23, 32, 51, .15);
     }
 
     h1 {
       margin: 5mm 0 2mm;
-      font-size: 38pt;
+      font-size: 34pt;
       line-height: 1;
-      letter-spacing: 0.03em;
-      color: #12366d;
+      letter-spacing: -0.04em;
+      font-weight: 900;
     }
 
-    h1 .green {
-      color: #28a745;
+    h1 span {
+      color: #2bb873;
     }
 
-    h1 .red {
-      color: #ef476f;
+    h1 strong {
+      color: #f05674;
+      font-style: normal;
     }
 
     .lead {
       margin: 0;
-      font-size: 14pt;
+      color: #46556a;
+      font-size: 12.5pt;
       font-weight: 700;
+      letter-spacing: .02em;
     }
 
     .qr-area {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 7mm;
+      gap: 8mm;
     }
 
     .card {
-      border-radius: 7mm;
-      padding: 6mm;
-      min-height: 110mm;
-      background: rgba(255, 255, 255, 0.9);
-      box-shadow: 0 8px 24px rgba(24, 49, 83, 0.12);
-      border: 1.5mm solid transparent;
+      min-height: 125mm;
+      border-radius: 9mm;
+      padding: 8mm 8mm 7mm;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.98), rgba(255,255,255,.88));
+      border: .7mm solid var(--soft);
+      box-shadow:
+        0 18px 40px rgba(23, 32, 51, .09),
+        inset 0 1px 0 rgba(255,255,255,.9);
       position: relative;
       overflow: hidden;
-    }
-
-    .card.work {
-      border-color: rgba(40, 167, 69, 0.35);
-    }
-
-    .card.leave {
-      border-color: rgba(239, 71, 111, 0.35);
     }
 
     .card::after {
       content: "";
       position: absolute;
-      height: 18mm;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      opacity: 0.18;
-      background:
-        linear-gradient(135deg, transparent 18%, currentColor 18% 21%, transparent 21%),
-        linear-gradient(225deg, transparent 18%, currentColor 18% 21%, transparent 21%);
-      background-size: 14mm 18mm;
+      left: -8mm;
+      right: -8mm;
+      bottom: -8mm;
+      height: 47mm;
+      background: linear-gradient(145deg, transparent 0 35%, var(--pale) 35% 100%);
+      z-index: 0;
+    }
+
+    .card-inner {
+      position: relative;
+      z-index: 1;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
 
     .work {
-      color: #28a745;
+      --main: #25ad65;
+      --soft: rgba(37, 173, 101, .28);
+      --pale: rgba(37, 173, 101, .13);
     }
 
     .leave {
-      color: #ef476f;
+      --main: #f05270;
+      --soft: rgba(240, 82, 112, .28);
+      --pale: rgba(240, 82, 112, .13);
     }
 
-    .card-title {
-      display: flex;
+    .card-head {
+      width: 100%;
+      display: grid;
+      grid-template-columns: 19mm 1fr;
+      gap: 5mm;
       align-items: center;
-      justify-content: center;
-      gap: 3mm;
-      margin-bottom: 3mm;
-      font-size: 27pt;
-      font-weight: 900;
-      line-height: 1.1;
-      color: inherit;
+      margin-bottom: 8mm;
     }
 
     .icon {
-      width: 17mm;
-      height: 17mm;
+      width: 18mm;
+      height: 18mm;
       border-radius: 50%;
       display: grid;
       place-items: center;
-      border: 1mm solid currentColor;
-      font-size: 23pt;
-      background: #fff;
+      background: var(--main);
+      color: #fff;
+      box-shadow: 0 10px 24px var(--soft);
     }
 
-    .card-sub {
-      text-align: center;
-      font-size: 13pt;
+    .icon svg {
+      width: 11mm;
+      height: 11mm;
+      stroke-width: 2.1;
+    }
+
+    .title-ja {
+      margin: 0;
+      color: #172033;
+      font-size: 27pt;
+      line-height: 1;
+      font-weight: 900;
+      letter-spacing: -0.05em;
+    }
+
+    .title-en {
+      margin-top: 3mm;
+      color: var(--main);
+      font-size: 11.5pt;
+      line-height: 1;
       font-weight: 800;
-      margin: 0 0 4mm;
-      color: inherit;
+      letter-spacing: .22em;
+    }
+
+    .scanner {
+      width: 75mm;
+      height: 75mm;
+      margin-top: 1mm;
+      position: relative;
+      display: grid;
+      place-items: center;
+    }
+
+    .scanner::before,
+    .scanner::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: 5mm;
+      pointer-events: none;
+    }
+
+    .scanner::before {
+      border: .75mm solid transparent;
+      background:
+        linear-gradient(var(--main), var(--main)) top left / 11mm .8mm no-repeat,
+        linear-gradient(var(--main), var(--main)) top left / .8mm 11mm no-repeat,
+        linear-gradient(var(--main), var(--main)) top right / 11mm .8mm no-repeat,
+        linear-gradient(var(--main), var(--main)) top right / .8mm 11mm no-repeat,
+        linear-gradient(var(--main), var(--main)) bottom left / 11mm .8mm no-repeat,
+        linear-gradient(var(--main), var(--main)) bottom left / .8mm 11mm no-repeat,
+        linear-gradient(var(--main), var(--main)) bottom right / 11mm .8mm no-repeat,
+        linear-gradient(var(--main), var(--main)) bottom right / .8mm 11mm no-repeat;
+      opacity: .92;
     }
 
     .qr-box {
       width: 62mm;
       height: 62mm;
       background: #fff;
-      margin: 0 auto;
       display: grid;
       place-items: center;
       border-radius: 4mm;
-      border: 0.6mm solid rgba(24, 49, 83, 0.18);
-      box-shadow: inset 0 0 0 2mm #fff, 0 5px 14px rgba(24, 49, 83, 0.1);
+      border: .45mm solid var(--soft);
+      box-shadow:
+        0 12px 28px rgba(23, 32, 51, .08),
+        inset 0 0 0 2mm #fff;
     }
 
     .qr-box canvas,
@@ -202,170 +248,203 @@
       height: 54mm !important;
     }
 
-    .url {
-      margin: 5mm auto 0;
-      padding: 2.2mm 3mm;
+    .pill {
+      margin-top: 7mm;
+      min-width: 42mm;
+      padding: 2.7mm 8mm;
+      border: .45mm solid var(--soft);
       border-radius: 999px;
-      color: #fff;
-      font-size: 8.5pt;
-      font-weight: 700;
+      color: var(--main);
+      background: rgba(255,255,255,.72);
+      font-size: 11pt;
+      font-weight: 800;
+      letter-spacing: .22em;
       text-align: center;
-      overflow-wrap: anywhere;
-      line-height: 1.3;
-    }
-
-    .work .url {
-      background: #28a745;
-    }
-
-    .leave .url {
-      background: #ef476f;
+      box-shadow: 0 8px 20px rgba(23, 32, 51, .06);
     }
 
     .howto {
-      background: #fffdf2;
-      border: 0.6mm solid #ffd166;
-      border-radius: 6mm;
-      padding: 5mm 6mm;
-      box-shadow: 0 6px 18px rgba(24, 49, 83, 0.08);
+      border-radius: 8mm;
+      padding: 6mm 7mm;
+      background: rgba(255, 255, 255, .86);
+      border: .45mm solid rgba(23, 32, 51, .08);
+      box-shadow: 0 12px 30px rgba(23, 32, 51, .07);
     }
 
     .howto-title {
-      display: inline-block;
-      background: #173b70;
-      color: #fff;
-      font-size: 17pt;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 2mm;
+      margin-bottom: 5mm;
+      color: #172033;
+      font-size: 18pt;
       font-weight: 900;
-      padding: 2mm 8mm;
+      letter-spacing: -0.03em;
+    }
+
+    .howto-title::before,
+    .howto-title::after {
+      content: "";
+      width: 18mm;
+      height: .45mm;
       border-radius: 999px;
-      margin: -10mm auto 4mm;
-      position: relative;
-      left: 50%;
-      transform: translateX(-50%);
-      white-space: nowrap;
-      box-shadow: 0 5px 14px rgba(23, 59, 112, 0.18);
+      background: linear-gradient(90deg, transparent, rgba(23,32,51,.22));
+    }
+
+    .howto-title::after {
+      background: linear-gradient(90deg, rgba(23,32,51,.22), transparent);
     }
 
     .steps {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
       gap: 4mm;
-      margin-top: 1mm;
     }
 
     .step {
+      padding: 4mm 3mm;
+      border-radius: 5mm;
+      background: #f7f9fb;
       text-align: center;
-      padding: 2mm;
-      border-right: 0.4mm dashed rgba(24, 49, 83, 0.18);
-    }
-
-    .step:last-child {
-      border-right: none;
+      min-height: 39mm;
     }
 
     .num {
-      width: 10mm;
-      height: 10mm;
+      width: 9mm;
+      height: 9mm;
+      margin: 0 auto 2mm;
       border-radius: 50%;
+      background: #172033;
+      color: #fff;
       display: grid;
       place-items: center;
-      background: #28a745;
-      color: #fff;
-      font-size: 15pt;
       font-weight: 900;
-      margin: 0 auto 2mm;
+      font-size: 12pt;
     }
 
     .step h3 {
       margin: 0 0 1.5mm;
-      font-size: 11.5pt;
-      color: #173b70;
-      line-height: 1.25;
+      font-size: 10.8pt;
+      font-weight: 900;
+      color: #172033;
+      letter-spacing: -0.03em;
     }
 
     .step p {
       margin: 0;
-      font-size: 8.8pt;
-      line-height: 1.45;
-      font-weight: 650;
+      color: #536176;
+      font-size: 8.6pt;
+      line-height: 1.5;
+      font-weight: 700;
     }
 
     .note {
       display: grid;
-      grid-template-columns: 1.2fr 1fr;
+      grid-template-columns: 1fr 1fr;
       gap: 5mm;
       margin-top: auto;
-      align-items: stretch;
     }
 
     .note-box {
-      background: rgba(255, 255, 255, 0.85);
-      border-radius: 5mm;
-      padding: 4mm 5mm;
-      border: 0.5mm solid rgba(23, 59, 112, 0.14);
+      border-radius: 6mm;
+      padding: 4.5mm 5mm;
+      background: rgba(255,255,255,.82);
+      border: .45mm solid rgba(23, 32, 51, .08);
     }
 
     .note-box h2 {
       margin: 0 0 2mm;
-      font-size: 15pt;
-      color: #173b70;
+      font-size: 13pt;
+      font-weight: 900;
+      color: #172033;
     }
 
     .note-box ul {
       margin: 0;
       padding-left: 5mm;
-      font-size: 10.5pt;
-      line-height: 1.6;
+      color: #536176;
+      font-size: 9.6pt;
+      line-height: 1.55;
       font-weight: 700;
     }
 
     footer {
       text-align: center;
-      font-size: 9pt;
-      color: #57708f;
+      font-size: 8.5pt;
+      color: #7a8798;
       font-weight: 700;
-      padding-bottom: 1mm;
+      letter-spacing: .1em;
     }
 
     @media print {
-      body {
-        background: #fff;
-      }
-
-      .sheet {
-        margin: 0;
-        box-shadow: none;
-      }
+      body { background: #fff; }
+      .sheet { margin: 0; }
     }
   </style>
 </head>
+
 <body>
   <main class="sheet">
     <div class="content">
       <header>
-        <div class="badge">毎日の打刻をカンタンに</div>
-        <h1>QRコードで<span class="green">出</span><span class="red">退</span>勤</h1>
-        <p class="lead">下のQRコードを読み取って、出勤・退勤の打刻を行ってください。</p>
+        <div class="eyebrow">SHINTAKU WORK</div>
+        <h1>QRコードで<span>出勤</span>・<strong>退勤</strong></h1>
+        <p class="lead">スマートフォンのLINEで、かんたん打刻。</p>
       </header>
 
       <section class="qr-area">
         <div class="card work">
-          <div class="card-title"><span class="icon">入</span>出勤はこちら</div>
-          <p class="card-sub">START WORK</p>
-          <div id="qr-in" class="qr-box"></div>
-          <div class="url">🟢 CLOCK IN</div>
+          <div class="card-inner">
+            <div class="card-head">
+              <div class="icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
+                  <path d="M10 17l5-5-5-5"/>
+                  <path d="M15 12H3"/>
+                </svg>
+              </div>
+              <div>
+                <p class="title-ja">出勤</p>
+                <div class="title-en">START WORK</div>
+              </div>
+            </div>
+
+            <div class="scanner">
+              <div id="qr-in" class="qr-box"></div>
+            </div>
+
+            <div class="pill">CLOCK IN</div>
+          </div>
         </div>
 
         <div class="card leave">
-          <div class="card-title"><span class="icon">退</span>退勤はこちら</div>
-          <p class="card-sub">FINISH WORK</p>
-          <div id="qr-out" class="qr-box"></div>
-          <div class="url">🔴 CLOCK OUT</div>
+          <div class="card-inner">
+            <div class="card-head">
+              <div class="icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                  <path d="M16 17l5-5-5-5"/>
+                  <path d="M21 12H9"/>
+                </svg>
+              </div>
+              <div>
+                <p class="title-ja">退勤</p>
+                <div class="title-en">FINISH WORK</div>
+              </div>
+            </div>
+
+            <div class="scanner">
+              <div id="qr-out" class="qr-box"></div>
+            </div>
+
+            <div class="pill">CLOCK OUT</div>
+          </div>
         </div>
       </section>
 
       <section class="howto">
-        <div class="howto-title">QRコードの読み取り方</div>
+        <div class="howto-title">使い方</div>
         <div class="steps">
           <div class="step">
             <div class="num">1</div>
@@ -374,42 +453,40 @@
           </div>
           <div class="step">
             <div class="num">2</div>
-            <h3>QRリーダーを開く</h3>
-            <p>ホーム画面の検索欄横にあるQRアイコンを押します。</p>
+            <h3>QRリーダー</h3>
+            <p>ホーム画面のQRアイコンを押します。</p>
           </div>
           <div class="step">
             <div class="num">3</div>
-            <h3>QRを読み取る</h3>
-            <p>出勤・退勤に合ったQRコードをカメラで読み取ります。</p>
+            <h3>コードをかざす</h3>
+            <p>出勤・退勤に合ったコードを選びます。</p>
           </div>
           <div class="step">
             <div class="num">4</div>
-            <h3>完了画面を確認</h3>
-            <p>打刻完了の表示が出れば完了です。</p>
+            <h3>完了確認</h3>
+            <p>完了画面が表示されたら打刻完了です。</p>
           </div>
         </div>
       </section>
 
       <section class="note">
         <div class="note-box">
-          <h2>ご注意ください</h2>
+          <h2>注意</h2>
           <ul>
-            <li>出勤時は「出勤」、退勤時は「退勤」のQRを読み取ってください。</li>
-            <li>通信環境の良い場所で読み取ってください。</li>
-            <li>うまく開かない場合は、LINEアプリを最新版にしてください。</li>
+            <li>出勤と退勤を間違えないよう確認してください。</li>
+            <li>通信環境の良い場所で操作してください。</li>
           </ul>
         </div>
         <div class="note-box">
-          <h2>読み取りのコツ</h2>
+          <h2>うまく開かない時</h2>
           <ul>
-            <li>QRコード全体が画面に入るようにします。</li>
-            <li>暗い場所では少し明るい場所で読み取ってください。</li>
-            <li>紙が汚れたら再印刷してください。</li>
+            <li>LINEアプリを最新版にしてください。</li>
+            <li>紙が汚れた場合は再印刷してください。</li>
           </ul>
         </div>
       </section>
 
-      <footer>SHINTAKU WORK｜QR Attendance Sheet</footer>
+      <footer>SHINTAKU ATTENDANCE SYSTEM</footer>
     </div>
   </main>
 
