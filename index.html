@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SHINTAKU 勤怠</title>
+
+  <script
+    charset="utf-8"
+    src="https://static.line-scdn.net/liff/edge/2/sdk.js">
+  </script>
+
+  <style>
+    body{
+      margin:0;
+      padding:0;
+      background:#f5f5f5;
+      font-family:sans-serif;
+    }
+
+    .wrap{
+      min-height:100vh;
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      padding:20px;
+      box-sizing:border-box;
+    }
+
+    .card{
+      width:100%;
+      max-width:420px;
+      background:white;
+      border-radius:18px;
+      padding:40px 24px;
+      box-sizing:border-box;
+      box-shadow:0 4px 24px rgba(0,0,0,0.08);
+      text-align:center;
+    }
+
+    h1{
+      margin:0 0 18px;
+      font-size:28px;
+    }
+
+    p{
+      margin:0;
+      color:#666;
+      line-height:1.7;
+    }
+
+    .ok{
+      color:#2e7d32;
+      font-weight:bold;
+    }
+
+    .error{
+      color:#c62828;
+      font-weight:bold;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="wrap">
+  <div class="card">
+    <h1 id="status">LINEと通信中...</h1>
+    <p id="detail">しばらくお待ちください</p>
+  </div>
+</div>
+
+<script>
+  // ===== LIFF ID =====
+  const myLiffId = "2010109211-y1fJhsUQ";
+
+  // ===== GAS URL =====
+  const gasUrl = "https://script.google.com/macros/s/AKfycby8SgVWrMZDQjkqurvW1G8R52agApCgKggB6QDXoZHKZo5khB9Sm_3RLE1MWTU8gWEG/exec";
+
+  const status = document.getElementById("status");
+  const detail = document.getElementById("detail");
+
+  // ===== URLパラメータ取得 =====
+  const params = new URLSearchParams(window.location.search);
+
+  // 普通のURL
+  let type = params.get("type");
+
+  // LIFF URL用
+  if (!type) {
+    const liffState = params.get("liff.state");
+    if (liffState) {
+      const stateParams = new URLSearchParams(liffState);
+      type = stateParams.get("type");
+    }
+  }
+
+  // ===== 一時保存 =====
+  if (type) {
+    sessionStorage.setItem("attendanceType", type);
+  }
+
+  // ===== ログイン後復元 =====
+  if (!type) {
+    type = sessionStorage.getItem("attendanceType");
+  }
+
+  // ===== 起動 =====
+  window.onload = async function () {
+    // typeが無い
+    if (!type) {
+      status.innerText = "設定エラー";
+      status.className = "error";
+      detail.innerText = "type（出勤/退勤）が指定されていません。";
+      return;
+    }
+
+    try {
+      // LIFF初期化
+      await liff.init({ liffId: myLiffId });
+
+      // 未ログイン
+      if (!liff.isLoggedIn()) {
+        status.innerText = "LINEログイン中...";
+        detail.innerText = "認証画面へ移動します";
+        liff.login();
+        return;
+      }
+
+      status.innerText = `${type}データ送信中...`;
+      detail.innerText = "LINE認証完了。サーバーに送信しています...";
+
+      // LINEプロフィール取得
+      const profile = await liff.getProfile();
+
+      // GASへ送信
+      await sendAttendance(profile.userId);
+
+    } catch (err) {
+      status.innerText = "システムエラー";
+      status.className = "error";
+      detail.innerText = err.message;
+    }
+  };
+
+  // ===== 打刻送信 (fetchを使ったPOST通信に修正) =====
+  async function sendAttendance(userId) {
+    try {
+      const response = await fetch(gasUrl, {
+        method: "POST",
+        body: JSON.stringify({
+          action: "attendance",
+          userId: userId,
+          type: type
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error("サーバーからの応答が不正です。");
+      }
+
+      const resData = await response.json();
+
+      if (resData.status === "success") {
+        status.innerText = `${type}処理完了`;
+        status.className = "ok";
+        detail.innerHTML = `${resData.datetime}<br><span style="font-size:12px; color:#999;">間もなく画面が閉じます。閉じない場合はトークへ戻ってください。</span>`;
+
+        // type消去
+        sessionStorage.removeItem("attendanceType");
+
+        // 自動で閉じる
+        setTimeout(() => {
+          liff.closeWindow();
+        }, 2000);
+
+      } else {
+        // エラー（二重打刻エラーなど）
+        status.innerText = `${type}できません`;
+        status.className = "error";
+        detail.innerText = resData.message;
+      }
+
+    } catch (err) {
+      // 通信失敗など
+      status.innerText = "通信エラー";
+      status.className = "error";
+      detail.innerText = "打刻サーバーに接続できませんでした。電波状況を確認してください。";
+      console.error(err);
+    }
+  }
+</script>
+
+</body>
+</html>
