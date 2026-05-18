@@ -19,14 +19,18 @@
     .ok { color: #2e7d32; }
     .error { color: #c62828; }
     
-    /* 改行やメッセージのまとまりを良くするスタイル */
     .msg-line { display: block; margin-bottom: 6px; }
     .msg-line:last-child { margin-bottom: 0; }
     
-    /* 必要なときだけ出現する、前回の時間枠 */
-    .last-time-box { background: #fee2e2; color: #991b1b; padding: 14px; border-radius: 10px; font-weight: bold; margin-bottom: 24px; font-size: 15px; border: 1px solid #fca5a5; line-height: 1.4; display: none; }
+    /* ★状況に合わせて色が変わるお知らせバー（初期状態は非表示） */
+    .info-bar { padding: 14px; border-radius: 10px; font-weight: bold; margin-bottom: 24px; font-size: 15px; line-height: 1.4; display: none; }
     
-    /* 閉じるボタンのデザインを微調整 */
+    /* 成功時の緑バー */
+    .info-bar.bg-green { display: block; background: #e8f5e9; color: #1b5e20; border: 1px solid #a5d6a7; }
+    
+    /* エラー時の赤バー */
+    .info-bar.bg-red { display: block; background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+    
     .close-btn { background: #dc2626; color: white; border: none; padding: 16px 24px; font-size: 16px; font-weight: bold; border-radius: 10px; cursor: pointer; width: 100%; display: none; box-shadow: 0 4px 12px rgba(220,38,38,0.15); -webkit-tap-highlight-color: transparent; }
     .close-btn:active { background: #b91c1c; }
     .notice { font-size: 13px; color: #888; display: block; margin-top: 12px; line-height: 1.4; }
@@ -39,7 +43,7 @@
     <h1 id="status">LINEと通信中...</h1>
     <p id="detail">しばらくお待ちください</p>
     
-    <div id="lastTimeBox" class="last-time-box"></div>
+    <div id="infoBar" class="info-bar"></div>
     
     <button id="closeBtn" class="close-btn" onclick="liff.closeWindow()">画面を閉じる</button>
   </div>
@@ -52,7 +56,7 @@
 
   const status = document.getElementById("status");
   const detail = document.getElementById("detail");
-  const lastTimeBox = document.getElementById("lastTimeBox");
+  const infoBar = document.getElementById("infoBar");
   const closeBtn = document.getElementById("closeBtn");
 
   const params = new URLSearchParams(window.location.search);
@@ -70,6 +74,10 @@
   if (!type) { type = sessionStorage.getItem("attendanceType"); }
 
   window.onload = async function () {
+    // 処理中はバーを表示しない（クラスをクリア）
+    infoBar.className = "info-bar";
+    infoBar.innerText = "";
+
     if (!type) {
       status.innerText = "設定エラー";
       status.className = "error";
@@ -104,7 +112,6 @@
       status.innerText = "システムエラー";
       status.className = "error";
       
-      // PC等でのトークン切れエラーを分かりやすく表示
       if (err.message.includes("revoked") || err.message.includes("expired")) {
         detail.innerHTML = '<span class="msg-line">有効期限が切れました。</span><span class="msg-line">もう一度QRコードを</span><span class="msg-line">読み直してください。</span>';
       } else {
@@ -126,23 +133,27 @@
       if (resData.status === "success") {
         status.innerText = `${type}処理完了`;
         status.className = "ok";
-        detail.innerHTML = `${resData.datetime}<br><span class="notice">間もなく画面が自動で閉じます。</span>`;
+        detail.innerHTML = '<span class="notice">間もなく画面が自動で閉じます。</span>';
+        
+        // ✨【緑バー】出勤・退勤の完了日時を緑色のバーで表示
+        infoBar.className = "info-bar bg-green";
+        infoBar.innerText = `記録日時 ➡️ ${resData.datetime}`;
+        
         sessionStorage.removeItem("attendanceType");
-        setTimeout(() => { liff.closeWindow(); }, 2000);
+        setTimeout(() => { liff.closeWindow(); }, 2500); // バーを読めるように2.5秒に少し延長
       } else {
         status.innerText = "処理ができません";
         status.className = "error";
         
-        // メッセージを句点で綺麗に改行して見やすく整形
         let formattedMsg = resData.message.split('。').filter(Boolean).map(msg => `<span class="msg-line">${msg}。</span>`).join('');
         detail.innerHTML = formattedMsg;
         
-        // ★前回の時間が確実に存在するときだけ、赤いボックスを出現させる
+        // 💥【赤バー】前回の時間があるエラー時だけ、赤色のバーで表示
         if (resData.lastTime) {
-          lastTimeBox.innerText = `直近の記録 ➡️ ${resData.lastTime}`;
-          lastTimeBox.style.display = "block";
+          infoBar.className = "info-bar bg-red";
+          infoBar.innerText = `直近の記録 ➡️ ${resData.lastTime}`;
         } else {
-          lastTimeBox.style.display = "none";
+          infoBar.className = "info-bar"; // データがなければ非表示
         }
         
         closeBtn.style.display = "block";
