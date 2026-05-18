@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SHINTAKU QR出退勤</title>
+  <style>
+    @page {
+      size: A4;
+      margin: 0;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: #eaf3ff;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Sans", "Yu Gothic", "Noto Sans JP", sans-serif;
+      color: #183153;
+    }
+
+    .sheet {
+      width: 210mm;
+      height: 297mm;
+      margin: 0 auto;
+      padding: 12mm;
+      background:
+        radial-gradient(circle at 10% 8%, rgba(69, 183, 96, 0.16), transparent 18%),
+        radial-gradient(circle at 90% 14%, rgba(255, 91, 117, 0.14), transparent 20%),
+        linear-gradient(145deg, #ffffff 0%, #f7fbff 45%, #fffaf6 100%);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .sheet::before,
+    .sheet::after {
+      content: "";
+      position: absolute;
+      border-radius: 999px;
+      z-index: 0;
+    }
+
+    .sheet::before {
+      width: 70mm;
+      height: 70mm;
+      background: rgba(46, 125, 255, 0.08);
+      right: -24mm;
+      top: -20mm;
+    }
+
+    .sheet::after {
+      width: 82mm;
+      height: 82mm;
+      background: rgba(69, 183, 96, 0.08);
+      left: -32mm;
+      bottom: -24mm;
+    }
+
+    .content {
+      position: relative;
+      z-index: 1;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 7mm;
+    }
+
+    header {
+      text-align: center;
+      padding: 5mm 4mm 3mm;
+    }
+
+    .badge {
+      display: inline-block;
+      background: #173b70;
+      color: #fff;
+      border-radius: 999px;
+      padding: 2.5mm 9mm;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      font-size: 14pt;
+      box-shadow: 0 5px 14px rgba(23, 59, 112, 0.18);
+    }
+
+    h1 {
+      margin: 5mm 0 2mm;
+      font-size: 38pt;
+      line-height: 1;
+      letter-spacing: 0.03em;
+      color: #12366d;
+    }
+
+    h1 .green {
+      color: #28a745;
+    }
+
+    h1 .red {
+      color: #ef476f;
+    }
+
+    .lead {
+      margin: 0;
+      font-size: 14pt;
+      font-weight: 700;
+    }
+
+    .qr-area {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 7mm;
+    }
+
+    .card {
+      border-radius: 7mm;
+      padding: 6mm;
+      min-height: 110mm;
+      background: rgba(255, 255, 255, 0.9);
+      box-shadow: 0 8px 24px rgba(24, 49, 83, 0.12);
+      border: 1.5mm solid transparent;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card.work {
+      border-color: rgba(40, 167, 69, 0.35);
+    }
+
+    .card.leave {
+      border-color: rgba(239, 71, 111, 0.35);
+    }
+
+    .card::after {
+      content: "";
+      position: absolute;
+      height: 18mm;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      opacity: 0.18;
+      background:
+        linear-gradient(135deg, transparent 18%, currentColor 18% 21%, transparent 21%),
+        linear-gradient(225deg, transparent 18%, currentColor 18% 21%, transparent 21%);
+      background-size: 14mm 18mm;
+    }
+
+    .work {
+      color: #28a745;
+    }
+
+    .leave {
+      color: #ef476f;
+    }
+
+    .card-title {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 3mm;
+      margin-bottom: 3mm;
+      font-size: 27pt;
+      font-weight: 900;
+      line-height: 1.1;
+      color: inherit;
+    }
+
+    .icon {
+      width: 17mm;
+      height: 17mm;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      border: 1mm solid currentColor;
+      font-size: 23pt;
+      background: #fff;
+    }
+
+    .card-sub {
+      text-align: center;
+      font-size: 13pt;
+      font-weight: 800;
+      margin: 0 0 4mm;
+      color: inherit;
+    }
+
+    .qr-box {
+      width: 62mm;
+      height: 62mm;
+      background: #fff;
+      margin: 0 auto;
+      display: grid;
+      place-items: center;
+      border-radius: 4mm;
+      border: 0.6mm solid rgba(24, 49, 83, 0.18);
+      box-shadow: inset 0 0 0 2mm #fff, 0 5px 14px rgba(24, 49, 83, 0.1);
+    }
+
+    .qr-box canvas,
+    .qr-box img {
+      width: 54mm !important;
+      height: 54mm !important;
+    }
+
+    .url {
+      margin: 5mm auto 0;
+      padding: 2.2mm 3mm;
+      border-radius: 999px;
+      color: #fff;
+      font-size: 8.5pt;
+      font-weight: 700;
+      text-align: center;
+      overflow-wrap: anywhere;
+      line-height: 1.3;
+    }
+
+    .work .url {
+      background: #28a745;
+    }
+
+    .leave .url {
+      background: #ef476f;
+    }
+
+    .howto {
+      background: #fffdf2;
+      border: 0.6mm solid #ffd166;
+      border-radius: 6mm;
+      padding: 5mm 6mm;
+      box-shadow: 0 6px 18px rgba(24, 49, 83, 0.08);
+    }
+
+    .howto-title {
+      display: inline-block;
+      background: #173b70;
+      color: #fff;
+      font-size: 17pt;
+      font-weight: 900;
+      padding: 2mm 8mm;
+      border-radius: 999px;
+      margin: -10mm auto 4mm;
+      position: relative;
+      left: 50%;
+      transform: translateX(-50%);
+      white-space: nowrap;
+      box-shadow: 0 5px 14px rgba(23, 59, 112, 0.18);
+    }
+
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 4mm;
+      margin-top: 1mm;
+    }
+
+    .step {
+      text-align: center;
+      padding: 2mm;
+      border-right: 0.4mm dashed rgba(24, 49, 83, 0.18);
+    }
+
+    .step:last-child {
+      border-right: none;
+    }
+
+    .num {
+      width: 10mm;
+      height: 10mm;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background: #28a745;
+      color: #fff;
+      font-size: 15pt;
+      font-weight: 900;
+      margin: 0 auto 2mm;
+    }
+
+    .step h3 {
+      margin: 0 0 1.5mm;
+      font-size: 11.5pt;
+      color: #173b70;
+      line-height: 1.25;
+    }
+
+    .step p {
+      margin: 0;
+      font-size: 8.8pt;
+      line-height: 1.45;
+      font-weight: 650;
+    }
+
+    .note {
+      display: grid;
+      grid-template-columns: 1.2fr 1fr;
+      gap: 5mm;
+      margin-top: auto;
+      align-items: stretch;
+    }
+
+    .note-box {
+      background: rgba(255, 255, 255, 0.85);
+      border-radius: 5mm;
+      padding: 4mm 5mm;
+      border: 0.5mm solid rgba(23, 59, 112, 0.14);
+    }
+
+    .note-box h2 {
+      margin: 0 0 2mm;
+      font-size: 15pt;
+      color: #173b70;
+    }
+
+    .note-box ul {
+      margin: 0;
+      padding-left: 5mm;
+      font-size: 10.5pt;
+      line-height: 1.6;
+      font-weight: 700;
+    }
+
+    footer {
+      text-align: center;
+      font-size: 9pt;
+      color: #57708f;
+      font-weight: 700;
+      padding-bottom: 1mm;
+    }
+
+    @media print {
+      body {
+        background: #fff;
+      }
+
+      .sheet {
+        margin: 0;
+        box-shadow: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="sheet">
+    <div class="content">
+      <header>
+        <div class="badge">毎日の打刻をカンタンに</div>
+        <h1>QRコードで<span class="green">出</span><span class="red">退</span>勤</h1>
+        <p class="lead">下のQRコードを読み取って、出勤・退勤の打刻を行ってください。</p>
+      </header>
+
+      <section class="qr-area">
+        <div class="card work">
+          <div class="card-title"><span class="icon">入</span>出勤はこちら</div>
+          <p class="card-sub">START WORK</p>
+          <div id="qr-in" class="qr-box"></div>
+          <div class="url">🟢 CLOCK IN</div>
+        </div>
+
+        <div class="card leave">
+          <div class="card-title"><span class="icon">退</span>退勤はこちら</div>
+          <p class="card-sub">FINISH WORK</p>
+          <div id="qr-out" class="qr-box"></div>
+          <div class="url">🔴 CLOCK OUT</div>
+        </div>
+      </section>
+
+      <section class="howto">
+        <div class="howto-title">QRコードの読み取り方</div>
+        <div class="steps">
+          <div class="step">
+            <div class="num">1</div>
+            <h3>LINEを開く</h3>
+            <p>スマートフォンでLINEアプリを開きます。</p>
+          </div>
+          <div class="step">
+            <div class="num">2</div>
+            <h3>QRリーダーを開く</h3>
+            <p>ホーム画面の検索欄横にあるQRアイコンを押します。</p>
+          </div>
+          <div class="step">
+            <div class="num">3</div>
+            <h3>QRを読み取る</h3>
+            <p>出勤・退勤に合ったQRコードをカメラで読み取ります。</p>
+          </div>
+          <div class="step">
+            <div class="num">4</div>
+            <h3>完了画面を確認</h3>
+            <p>打刻完了の表示が出れば完了です。</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="note">
+        <div class="note-box">
+          <h2>ご注意ください</h2>
+          <ul>
+            <li>出勤時は「出勤」、退勤時は「退勤」のQRを読み取ってください。</li>
+            <li>通信環境の良い場所で読み取ってください。</li>
+            <li>うまく開かない場合は、LINEアプリを最新版にしてください。</li>
+          </ul>
+        </div>
+        <div class="note-box">
+          <h2>読み取りのコツ</h2>
+          <ul>
+            <li>QRコード全体が画面に入るようにします。</li>
+            <li>暗い場所では少し明るい場所で読み取ってください。</li>
+            <li>紙が汚れたら再印刷してください。</li>
+          </ul>
+        </div>
+      </section>
+
+      <footer>SHINTAKU WORK｜QR Attendance Sheet</footer>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+  <script>
+    const qrOptions = {
+      width: 220,
+      height: 220,
+      colorDark: "#111111",
+      colorLight: "#ffffff",
+      correctLevel: QRCode.CorrectLevel.H
+    };
+
+    new QRCode(document.getElementById("qr-in"), {
+      text: "https://liff.line.me/2010109211-y1fJhsUQ?type=出勤",
+      ...qrOptions
+    });
+
+    new QRCode(document.getElementById("qr-out"), {
+      text: "https://liff.line.me/2010109211-y1fJhsUQ?type=退勤",
+      ...qrOptions
+    });
+  </script>
+</body>
+</html>
