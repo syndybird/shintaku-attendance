@@ -248,6 +248,20 @@
       height: 50mm !important;
     }
 
+    
+    .link-pill {
+      text-decoration: none;
+      transition: .18s ease;
+      cursor: pointer;
+    }
+
+    .link-pill:hover {
+      transform: translateY(-1px);
+      background: rgba(255,255,255,.96);
+      box-shadow: 0 10px 22px rgba(23, 32, 51, .12);
+    }
+
+
     .pill {
       margin-top: 4mm;
       min-width: 42mm;
@@ -414,7 +428,7 @@
               <div id="qr-in" class="qr-box"></div>
             </div>
 
-            <div class="pill">CLOCK IN</div>
+            <a class="pill link-pill" href="https://liff.line.me/2010109211-y1fJhsUQ?type=出勤" target="_blank">CLOCK IN ↗</a>
           </div>
         </div>
 
@@ -438,7 +452,7 @@
               <div id="qr-out" class="qr-box"></div>
             </div>
 
-            <div class="pill">CLOCK OUT</div>
+            <a class="pill link-pill" href="https://liff.line.me/2010109211-y1fJhsUQ?type=退勤" target="_blank">CLOCK OUT ↗</a>
           </div>
         </div>
       </section>
