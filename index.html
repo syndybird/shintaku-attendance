@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>SHINTAKU 勤怠</title>
 
   <script
@@ -11,15 +11,17 @@
   </script>
 
   <style>
-    body{ margin:0; padding:0; background:#f5f5f5; font-family:sans-serif; }
-    .wrap{ min-height:100vh; display:flex; justify-content:center; align-items:center; padding:20px; box-sizing:border-box; }
-    .card{ width:100%; max-width:420px; background:white; border-radius:18px; padding:40px 24px; box-sizing:border-box; box-shadow:0 4px 24px rgba(0,0,0,0.08); text-align:center; }
-    h1{ margin:0 0 18px; font-size:28px; }
-    p{ margin:0 0 20px; color:#666; line-height:1.7; }
-    .ok{ color:#2e7d32; font-weight:bold; }
-    .error{ color:#c62828; font-weight:bold; }
-    .last-time-box { background: #fee2e2; color: #991b1b; padding: 12px; border-radius: 8px; font-weight: bold; margin-bottom: 20px; display: none; font-size: 15px; }
-    .close-btn { background: #dc2626; color: white; border: none; padding: 14px 24px; font-size: 16px; font-weight: bold; border-radius: 8px; cursor: pointer; width: 100%; display: none; margin-top: 10px; box-shadow: 0 2px 8px rgba(220,38,38,0.2); }
+    body { margin: 0; padding: 0; background: #f5f5f5; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+    .wrap { min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 16px; box-sizing: border-box; }
+    .card { width: 100%; max-width: 380px; background: white; border-radius: 16px; padding: 32px 20px; box-sizing: border-box; box-shadow: 0 4px 20px rgba(0,0,0,0.06); text-align: center; }
+    h1 { margin: 0 0 16px; font-size: 24px; font-weight: 700; letter-spacing: -0.5px; }
+    p { margin: 0 0 24px; color: #555; font-size: 15px; line-height: 1.6; word-break: break-all; }
+    .ok { color: #2e7d32; }
+    .error { color: #c62828; }
+    .last-time-box { background: #fee2e2; color: #991b1b; padding: 14px; border-radius: 10px; font-weight: bold; margin-bottom: 20px; font-size: 15px; border: 1px solid #fca5a5; line-height: 1.4; }
+    .close-btn { background: #dc2626; color: white; border: none; padding: 16px 24px; font-size: 16px; font-weight: bold; border-radius: 10px; cursor: pointer; width: 100%; display: none; margin-top: 8px; box-shadow: 0 4px 12px rgba(220,38,38,0.15); -webkit-tap-highlight-color: transparent; }
+    .close-btn:active { background: #b91c1c; }
+    .notice { font-size: 13px; color: #888; display: block; margin-top: 12px; line-height: 1.4; }
   </style>
 </head>
 <body>
@@ -63,7 +65,7 @@
     if (!type) {
       status.innerText = "設定エラー";
       status.className = "error";
-      detail.innerText = "typeが指定されていません。";
+      detail.innerText = "URLの指定（type）が正しくありません。";
       closeBtn.style.display = "block";
       return;
     }
@@ -73,7 +75,7 @@
 
       if (!liff.isLoggedIn()) {
         status.innerText = "LINEログイン中...";
-        detail.innerText = "認証画面へ移動します";
+        detail.innerText = "認証画面へ移動します。";
         liff.login();
         return;
       }
@@ -82,11 +84,11 @@
 
       if (type === "ユーザー登録") {
         status.innerText = "初期メンバー登録中...";
-        detail.innerText = "LINEの情報を読み込んでいます...";
+        detail.innerText = "LINEの情報を読み込んでいます。";
         await submitRegistration(profile.userId, profile.displayName);
       } else {
         status.innerText = `${type}データ送信中...`;
-        detail.innerText = "サーバーに送信しています...";
+        detail.innerText = "サーバーに送信しています。";
         await sendAttendance(profile.userId);
       }
 
@@ -110,22 +112,22 @@
       if (resData.status === "success") {
         status.innerText = `${type}処理完了`;
         status.className = "ok";
-        detail.innerHTML = `${resData.datetime}<br><span style="font-size:12px; color:#999;">間もなく画面が閉じます。</span>`;
+        detail.innerHTML = `${resData.datetime}<br><span class="notice">間もなく画面が自動で閉じます。</span>`;
         sessionStorage.removeItem("attendanceType");
         setTimeout(() => { liff.closeWindow(); }, 2000);
       } else {
-        // ★打刻エラー時の処理
-        status.innerText = `${type}できません`;
+        status.innerText = "処理ができません";
         status.className = "error";
-        detail.innerText = resData.message;
         
-        // 前回の時間データがあれば赤枠で表示
+        // 連続打刻エラーの文言をスッキリ2行に分ける
+        detail.innerHTML = resData.message.replace("。確定", "。<br>確定")
+                                          .replace("。連続", "。<br>連続");
+        
         if (resData.lastTime) {
           lastTimeBox.innerText = `直近の記録 ➡️ ${resData.lastTime}`;
           lastTimeBox.style.display = "block";
         }
         
-        // 閉じるボタンを表示
         closeBtn.style.display = "block";
       }
     } catch (err) {
