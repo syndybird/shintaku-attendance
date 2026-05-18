@@ -15,9 +15,11 @@
     .wrap{ min-height:100vh; display:flex; justify-content:center; align-items:center; padding:20px; box-sizing:border-box; }
     .card{ width:100%; max-width:420px; background:white; border-radius:18px; padding:40px 24px; box-sizing:border-box; box-shadow:0 4px 24px rgba(0,0,0,0.08); text-align:center; }
     h1{ margin:0 0 18px; font-size:28px; }
-    p{ margin:0; color:#666; line-height:1.7; }
+    p{ margin:0 0 20px; color:#666; line-height:1.7; }
     .ok{ color:#2e7d32; font-weight:bold; }
     .error{ color:#c62828; font-weight:bold; }
+    .last-time-box { background: #fee2e2; color: #991b1b; padding: 12px; border-radius: 8px; font-weight: bold; margin-bottom: 20px; display: none; font-size: 15px; }
+    .close-btn { background: #dc2626; color: white; border: none; padding: 14px 24px; font-size: 16px; font-weight: bold; border-radius: 8px; cursor: pointer; width: 100%; display: none; margin-top: 10px; box-shadow: 0 2px 8px rgba(220,38,38,0.2); }
   </style>
 </head>
 <body>
@@ -26,6 +28,10 @@
   <div class="card">
     <h1 id="status">LINEと通信中...</h1>
     <p id="detail">しばらくお待ちください</p>
+    
+    <div id="lastTimeBox" class="last-time-box"></div>
+    
+    <button id="closeBtn" class="close-btn" onclick="liff.closeWindow()">画面を閉じる</button>
   </div>
 </div>
 
@@ -36,6 +42,8 @@
 
   const status = document.getElementById("status");
   const detail = document.getElementById("detail");
+  const lastTimeBox = document.getElementById("lastTimeBox");
+  const closeBtn = document.getElementById("closeBtn");
 
   const params = new URLSearchParams(window.location.search);
   let type = params.get("type");
@@ -56,6 +64,7 @@
       status.innerText = "設定エラー";
       status.className = "error";
       detail.innerText = "typeが指定されていません。";
+      closeBtn.style.display = "block";
       return;
     }
 
@@ -69,13 +78,11 @@
         return;
       }
 
-      // LINEプロフィール（ユーザーIDと登録名）を自動取得
       const profile = await liff.getProfile();
 
       if (type === "ユーザー登録") {
         status.innerText = "初期メンバー登録中...";
         detail.innerText = "LINEの情報を読み込んでいます...";
-        // LINEの登録名（displayName）をそのまま送信！
         await submitRegistration(profile.userId, profile.displayName);
       } else {
         status.innerText = `${type}データ送信中...`;
@@ -87,6 +94,7 @@
       status.innerText = "システムエラー";
       status.className = "error";
       detail.innerText = err.message;
+      closeBtn.style.display = "block";
     }
   };
 
@@ -106,14 +114,25 @@
         sessionStorage.removeItem("attendanceType");
         setTimeout(() => { liff.closeWindow(); }, 2000);
       } else {
+        // ★打刻エラー時の処理
         status.innerText = `${type}できません`;
         status.className = "error";
         detail.innerText = resData.message;
+        
+        // 前回の時間データがあれば赤枠で表示
+        if (resData.lastTime) {
+          lastTimeBox.innerText = `直近の記録 ➡️ ${resData.lastTime}`;
+          lastTimeBox.style.display = "block";
+        }
+        
+        // 閉じるボタンを表示
+        closeBtn.style.display = "block";
       }
     } catch (err) {
       status.innerText = "通信エラー";
       status.className = "error";
       detail.innerText = "打刻サーバーに接続できませんでした。";
+      closeBtn.style.display = "block";
     }
   }
 
@@ -129,18 +148,20 @@
       if (resData.status === "success") {
         status.innerText = "登録完了！";
         status.className = "ok";
-        detail.innerHTML = `こんにちは、${displayName}さん。<br>メンバー登録が自動完了しました！<br><span style="font-size:12px; color:#999;">間もなく画面が閉じます。</span>`;
+        detail.innerHTML = `こんにちは、${displayName}さん。<br>メンバー登録が自動完了しました！`;
         sessionStorage.removeItem("attendanceType");
         setTimeout(() => { liff.closeWindow(); }, 3000);
       } else {
         status.innerText = "登録の確認";
         status.className = "error";
-        detail.innerText = resData.message; // 「すでに登録されています」などのメッセージを表示
+        detail.innerText = resData.message;
+        closeBtn.style.display = "block";
       }
     } catch (err) {
       status.innerText = "通信エラー";
       status.className = "error";
       detail.innerText = "登録サーバーに接続できませんでした。";
+      closeBtn.style.display = "block";
     }
   }
 </script>
