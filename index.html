@@ -15,13 +15,9 @@
     .wrap{ min-height:100vh; display:flex; justify-content:center; align-items:center; padding:20px; box-sizing:border-box; }
     .card{ width:100%; max-width:420px; background:white; border-radius:18px; padding:40px 24px; box-sizing:border-box; box-shadow:0 4px 24px rgba(0,0,0,0.08); text-align:center; }
     h1{ margin:0 0 18px; font-size:28px; }
-    p{ margin:0 0 20px; color:#666; line-height:1.7; }
+    p{ margin:0; color:#666; line-height:1.7; }
     .ok{ color:#2e7d32; font-weight:bold; }
     .error{ color:#c62828; font-weight:bold; }
-    input[type="text"] { width: 100%; padding: 12px; font-size: 16px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; margin-bottom: 20px; text-align: center; }
-    button { background: #06C755; color: white; border: none; padding: 12px 24px; font-size: 16px; font-weight: bold; border-radius: 8px; cursor: pointer; width: 100%; }
-    button:disabled { background: #ccc; }
-    #registerForm { display: none; }
   </style>
 </head>
 <body>
@@ -30,23 +26,16 @@
   <div class="card">
     <h1 id="status">LINEと通信中...</h1>
     <p id="detail">しばらくお待ちください</p>
-
-    <div id="registerForm">
-      <input type="text" id="userName" placeholder="お名前を入力（例: 山田太郎）">
-      <button id="regBtn" onclick="submitRegistration()">メンバー登録する</button>
-    </div>
   </div>
 </div>
 
 <script>
   const myLiffId = "2010109211-y1fJhsUQ";
   // ★あなたの最新のGASデプロイURLに書き換えてください！
-  const gasUrl = "https://script.google.com/macros/s/AKfycbyuLXLzn9IKy18OWGnijll4c9uQ1-kZK_1V_bCXtW4AQt1iTTSFw13xJ4SxbIEv-jRA/exec";
+  const gasUrl = "https://script.google.com/macros/s/AKfycby8SgVWrMZDQjkqurvW1G8R52agApCgKggB6QDXoZHKZo5khB9Sm_3RLE1MWTU8gWEG/exec";
 
   const status = document.getElementById("status");
   const detail = document.getElementById("detail");
-  const registerForm = document.getElementById("registerForm");
-  let currentUserId = "";
 
   const params = new URLSearchParams(window.location.search);
   let type = params.get("type");
@@ -80,17 +69,18 @@
         return;
       }
 
+      // LINEプロフィール（ユーザーIDと登録名）を自動取得
       const profile = await liff.getProfile();
-      currentUserId = profile.userId;
 
       if (type === "ユーザー登録") {
-        status.innerText = "新規メンバー登録";
-        detail.innerText = "勤怠システムを利用するために、お名前を登録してください。";
-        registerForm.style.display = "block";
+        status.innerText = "初期メンバー登録中...";
+        detail.innerText = "LINEの情報を読み込んでいます...";
+        // LINEの登録名（displayName）をそのまま送信！
+        await submitRegistration(profile.userId, profile.displayName);
       } else {
         status.innerText = `${type}データ送信中...`;
         detail.innerText = "サーバーに送信しています...";
-        await sendAttendance(currentUserId);
+        await sendAttendance(profile.userId);
       }
 
     } catch (err) {
@@ -127,41 +117,30 @@
     }
   }
 
-  // ユーザー登録送信
-  async function submitRegistration() {
-    const nameInput = document.getElementById("userName").value.trim();
-    if (!nameInput) {
-      alert("お名前を入力してください。");
-      return;
-    }
-
-    document.getElementById("regBtn").disabled = true;
-    status.innerText = "登録情報を送信中...";
-
+  // 自動ユーザー登録送信
+  async function submitRegistration(userId, displayName) {
     try {
       const response = await fetch(gasUrl, {
         method: "POST",
-        body: JSON.stringify({ action: "register", userId: currentUserId, name: nameInput })
+        body: JSON.stringify({ action: "register", userId: userId, name: displayName })
       });
       const resData = await response.json();
 
       if (resData.status === "success") {
-        status.innerText = "登録が完了しました！";
+        status.innerText = "登録完了！";
         status.className = "ok";
-        registerForm.style.display = "none";
-        detail.innerHTML = `こんにちは、${nameInput}さん。<br>明日から出勤・退勤のQRコードで打刻できます。<br><span style="font-size:12px; color:#999;">画面を閉じてトークに戻ってください。</span>`;
+        detail.innerHTML = `こんにちは、${displayName}さん。<br>メンバー登録が自動完了しました！<br><span style="font-size:12px; color:#999;">間もなく画面が閉じます。</span>`;
         sessionStorage.removeItem("attendanceType");
+        setTimeout(() => { liff.closeWindow(); }, 3000);
       } else {
-        status.innerText = "登録失敗";
+        status.innerText = "登録の確認";
         status.className = "error";
-        detail.innerText = resData.message;
-        document.getElementById("regBtn").disabled = false;
+        detail.innerText = resData.message; // 「すでに登録されています」などのメッセージを表示
       }
     } catch (err) {
       status.innerText = "通信エラー";
       status.className = "error";
       detail.innerText = "登録サーバーに接続できませんでした。";
-      document.getElementById("regBtn").disabled = false;
     }
   }
 </script>
