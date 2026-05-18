@@ -30,7 +30,7 @@
       width: 210mm;
       height: 297mm;
       margin: 0 auto;
-      padding: 13mm;
+      padding: 10mm;
       background:
         radial-gradient(circle at 12% 8%, rgba(44, 183, 113, 0.12), transparent 22%),
         radial-gradient(circle at 88% 10%, rgba(245, 86, 116, 0.11), transparent 22%),
@@ -54,12 +54,12 @@
       height: 100%;
       display: flex;
       flex-direction: column;
-      gap: 8mm;
+      gap: 5mm;
     }
 
     header {
       text-align: center;
-      padding-top: 3mm;
+      padding-top: 1mm;
     }
 
     .eyebrow {
@@ -77,8 +77,8 @@
     }
 
     h1 {
-      margin: 5mm 0 2mm;
-      font-size: 34pt;
+      margin: 3mm 0 1.5mm;
+      font-size: 31pt;
       line-height: 1;
       letter-spacing: -0.04em;
       font-weight: 900;
@@ -104,13 +104,13 @@
     .qr-area {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 8mm;
+      gap: 5mm;
     }
 
     .card {
-      min-height: 125mm;
+      min-height: 113mm;
       border-radius: 9mm;
-      padding: 8mm 8mm 7mm;
+      padding: 6mm 7mm 5mm;
       background:
         linear-gradient(180deg, rgba(255,255,255,.98), rgba(255,255,255,.88));
       border: .7mm solid var(--soft);
@@ -159,7 +159,7 @@
       grid-template-columns: 19mm 1fr;
       gap: 5mm;
       align-items: center;
-      margin-bottom: 8mm;
+      margin-bottom: 3mm;
     }
 
     .icon {
@@ -198,8 +198,8 @@
     }
 
     .scanner {
-      width: 75mm;
-      height: 75mm;
+      width: 70mm;
+      height: 70mm;
       margin-top: 1mm;
       position: relative;
       display: grid;
@@ -230,8 +230,8 @@
     }
 
     .qr-box {
-      width: 62mm;
-      height: 62mm;
+      width: 58mm;
+      height: 58mm;
       background: #fff;
       display: grid;
       place-items: center;
@@ -244,12 +244,12 @@
 
     .qr-box canvas,
     .qr-box img {
-      width: 54mm !important;
-      height: 54mm !important;
+      width: 50mm !important;
+      height: 50mm !important;
     }
 
     .pill {
-      margin-top: 7mm;
+      margin-top: 4mm;
       min-width: 42mm;
       padding: 2.7mm 8mm;
       border: .45mm solid var(--soft);
@@ -265,7 +265,7 @@
 
     .howto {
       border-radius: 8mm;
-      padding: 6mm 7mm;
+      padding: 4.5mm 6mm;
       background: rgba(255, 255, 255, .86);
       border: .45mm solid rgba(23, 32, 51, .08);
       box-shadow: 0 12px 30px rgba(23, 32, 51, .07);
@@ -276,7 +276,7 @@
       align-items: center;
       justify-content: center;
       gap: 2mm;
-      margin-bottom: 5mm;
+      margin-bottom: 3mm;
       color: #172033;
       font-size: 18pt;
       font-weight: 900;
@@ -303,11 +303,11 @@
     }
 
     .step {
-      padding: 4mm 3mm;
+      padding: 3mm 2.5mm;
       border-radius: 5mm;
       background: #f7f9fb;
       text-align: center;
-      min-height: 39mm;
+      min-height: 32mm;
     }
 
     .num {
@@ -334,7 +334,7 @@
     .step p {
       margin: 0;
       color: #536176;
-      font-size: 8.6pt;
+      font-size: 8.1pt;
       line-height: 1.5;
       font-weight: 700;
     }
@@ -348,7 +348,7 @@
 
     .note-box {
       border-radius: 6mm;
-      padding: 4.5mm 5mm;
+      padding: 3.5mm 4.5mm;
       background: rgba(255,255,255,.82);
       border: .45mm solid rgba(23, 32, 51, .08);
     }
@@ -364,14 +364,14 @@
       margin: 0;
       padding-left: 5mm;
       color: #536176;
-      font-size: 9.6pt;
-      line-height: 1.55;
+      font-size: 8.9pt;
+      line-height: 1.45;
       font-weight: 700;
     }
 
     footer {
       text-align: center;
-      font-size: 8.5pt;
+      font-size: 7.8pt;
       color: #7a8798;
       font-weight: 700;
       letter-spacing: .1em;
@@ -390,7 +390,7 @@
       <header>
         <div class="eyebrow">SHINTAKU WORK</div>
         <h1>QRコードで<span>出勤</span>・<strong>退勤</strong></h1>
-        <p class="lead">スマートフォンのLINEで、かんたん打刻。</p>
+        <p class="lead">出勤時・退勤時に、該当するQRコードを読み取ってください。</p>
       </header>
 
       <section class="qr-area">
@@ -493,8 +493,8 @@
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
   <script>
     const qrOptions = {
-      width: 220,
-      height: 220,
+      width: 205,
+      height: 205,
       colorDark: "#111111",
       colorLight: "#ffffff",
       correctLevel: QRCode.CorrectLevel.H
