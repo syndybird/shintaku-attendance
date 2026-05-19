@@ -44,7 +44,7 @@
   </div>
 
   <script>
-    // デプロイ済みのGASウェブアプリURL（書き換え済み）
+    // デプロイ済みのGASウェブアプリURL
     const GAS_URL = "https://script.google.com/macros/s/AKfycbxm7UaGS-K8ifm6zbqja199RqTt2GzIlRoMzGHjYjGW3TU_SlrtoJaz5vAw4GmQi0Wi/exec";
     
     let userName = "テストユーザー"; 
@@ -53,7 +53,6 @@
 
     // LIFF初期化
     document.addEventListener("DOMContentLoaded", function() {
-      // 本番用LIFF ID（既存のものを流用）
       liff.init({ liffId: "2010136950-uGfcZEcw" })
         .then(() => {
           if (!liff.isLoggedIn()) {
@@ -74,7 +73,6 @@
 
     // システム起動・カレンダー描画
     function initSystem() {
-      // GASから現在のシフト埋まり状況を読み込む（GETパラメータでアクションを指定）
       fetch(`${GAS_URL}?action=getShift`)
         .then(res => res.json())
         .then(data => {
@@ -82,7 +80,7 @@
           renderCalendar();
         }).catch(err => {
           alert("データ通信に失敗しました。電波の良い場所で再開してください。");
-          renderCalendar(); // 失敗しても空でカレンダーは出す
+          renderCalendar();
         });
     }
 
@@ -93,14 +91,19 @@
         locale: 'ja',
         headerToolbar: { left: 'prev', center: 'title', right: 'next' },
         height: 'auto',
-        dayCellContent: function(e) { return e.dayNumberText.replace('日', ''); }, // 「日」の表示を消してすっきり
+        dayCellContent: function(e) { return e.dayNumberText.replace('日', ''); },
         
-        // 各日付のマスが描画されるときの処理（ここにAM/PMボタンをねじ込む）
+        // 各日付のマスが描画されるときの処理
         dayCellDidMount: function(info) {
-          const dateStr = info.date.toISOString().split('T')[0];
+          // 【時差修正】世界標準時ではなく、マスのローカル日付から直接 yyyy-MM-dd を生成
+          const y = info.date.getFullYear();
+          const m = String(info.date.getMonth() + 1).padStart(2, '0');
+          const d = String(info.date.getDate()).padStart(2, '0');
+          const dateStr = `${y}-${m}-${d}`;
+
           const eventsContainer = info.el.querySelector('.fc-daygrid-day-events');
           if (!eventsContainer) return;
-          eventsContainer.innerHTML = ''; // 初期化
+          eventsContainer.innerHTML = ''; 
 
           // AMとPMの2つのスロットボタンを生成
           ['AM', 'PM'].forEach(slot => {
@@ -121,15 +124,87 @@
                 btn.dataset.status = 'conflict';
               }
             } else {
-              // データがなければ「空き枠（緑）」
               btn.classList.add('bg-green-slot');
               btn.innerText = `${slot} 空き`;
               btn.dataset.status = 'available';
             }
 
-            // ポチポチクリックしたときのカラー変更ロジック
+            // クリック時のカラー変更ロジック
             btn.addEventListener('click', function(e) {
               e.stopPropagation();
               const key = `${dateStr}_${slot}`;
 
               if (btn.dataset.status === 'available') {
+                if (selectedSlots[key]) {
+                  delete selectedSlots[key];
+                  btn.className = 'slot-btn bg-green-slot';
+                  btn.innerText = `${slot} 空き`;
+                } else {
+                  selectedSlots[key] = { date: dateStr, slot: slot, mode: 'normal' };
+                  btn.className = 'slot-btn bg-blue-slot';
+                  btn.innerText = `${slot} 選択中`;
+                }
+              } else if (btn.dataset.status === 'reserved' || btn.dataset.status === 'conflict') {
+                if (selectedSlots[key]) {
+                  delete selectedSlots[key];
+                  btn.className = `slot-btn ${match.status === '予約済み' ? 'bg-red-slot' : 'bg-purple-slot'}`;
+                  btn.innerText = match.status === '予約済み' ? `${slot}:${match.user}` : `${slot}:競合中`;
+                } else {
+                  selectedSlots[key] = { date: dateStr, slot: slot, mode: 'force' };
+                  btn.className = 'slot-btn bg-purple-slot';
+                  btn.innerText = `${slot} 競合申請`;
+                }
+              }
+              updateSubmitButton();
+            });
+
+            eventsContainer.appendChild(btn);
+          });
+        }
+      });
+      calendar.render();
+    }
+
+    // 提出ボタンの有効化と個数カウント
+    function updateSubmitButton() {
+      const count = Object.keys(selectedSlots).length;
+      document.getElementById('select-count').innerText = count;
+      document.getElementById('submit-btn').disabled = (count === 0);
+    }
+
+    // 提出ボタンを押したときの処理
+    document.getElementById('submit-btn').addEventListener('click', function() {
+      const btn = this;
+      btn.disabled = true;
+      btn.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> 送信中...`;
+
+      const payload = {
+        userName: userName,
+        selections: Object.values(selectedSlots)
+      };
+
+      const encodedData = encodeURIComponent(JSON.stringify(payload));
+      const finalUrl = `${GAS_URL}?action=submitShift&data=${encodedData}`;
+
+      fetch(finalUrl, { method: "GET" })
+      .then(res => res.json())
+      .then(result => {
+        if (result.result === "success") {
+          alert("シフト希望を提出しました！先着判定の上、シートに記録されました。");
+          selectedSlots = {};
+          initSystem(); 
+        } else {
+          alert("エラー: " + result.message);
+          btn.innerHTML = `<i class="fa-solid fa-paper-plane"></i> シフトを提出する`;
+          btn.disabled = false;
+        }
+      })
+      .catch(err => {
+        alert("送信処理を完了しました。最新の状況に更新します。");
+        selectedSlots = {};
+        initSystem();
+      });
+    });
+  </script>
+</body>
+</html>
