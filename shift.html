@@ -18,7 +18,7 @@
     .bg-red-slot { background-color: #ef4444; color: #ffffff; }    /* 予約済（赤枠・白文字） */
     .bg-blue-slot { background-color: #3b82f6; color: #ffffff; border: 2px solid #1d4ed8; }   /* 選択中（青枠・白文字） */
     .bg-purple-slot { background-color: #a855f7; color: #ffffff; border: 2px solid #6b21a8; } /* 競合（紫枠・白文字） */
-    .bg-sky-slot { background-color: #38bdf8; color: #ffffff; cursor: not-allowed; } /* 【新規】確定済（水色枠・白文字・クリック不可） */
+    .bg-sky-slot { background-color: #38bdf8; color: #ffffff; cursor: not-allowed; } /* 確定済（水色枠・白文字・クリック不可） */
     
     /* AM/PMの文字自体を強調するためのスタイル */
     .slot-text-main { color: #000000; font-weight: 800; margin-right: 4px; } /* 黒字のAM/PM */
@@ -67,14 +67,22 @@
     document.addEventListener("DOMContentLoaded", function() {
       liff.init({ liffId: "2010136950-uGfcZEcw" })
         .then(() => {
-          if (!liff.isLoggedIn()) {
-            liff.login();
+          // 【時差修正】PCブラウザ環境（LINEの外）なら強制リダイレクトせずにテストモードで起動する
+          if (!liff.isInClient() && !liff.isLoggedIn()) {
+            console.log("外部ブラウザ検知: ログインをスキップしてテストモードで開きます");
+            document.getElementById("user-info").innerText = "⚠️ PCテストモード";
+            initSystem();
           } else {
-            liff.getProfile().then(profile => {
-              userName = profile.displayName;
-              document.getElementById("user-info").innerText = "👤 " + userName;
-              initSystem();
-            });
+            // スマホのLINE内、またはすでにログイン済みの通常処理
+            if (!liff.isLoggedIn()) {
+              liff.login();
+            } else {
+              liff.getProfile().then(profile => {
+                userName = profile.displayName;
+                document.getElementById("user-info").innerText = "👤 " + userName;
+                initSystem();
+              });
+            }
           }
         }).catch(err => {
           console.log("LIFF初期化失敗、テストモードで起動");
@@ -122,7 +130,6 @@
             
             if (match) {
               if (match.status === '確定') {
-                // 【新規】確定済みの場合は水色にして、クリックイベントを設定しない（ロック）
                 btn.classList.add('bg-sky-slot');
                 btn.innerHTML = `<span class="slot-text-main">${slot}</span><span class="slot-symbol">確定</span>`;
                 btn.dataset.status = 'confirmed';
@@ -141,7 +148,6 @@
               btn.dataset.status = 'available';
             }
 
-            // 確定済みのスロットでなければクリックイベントを登録
             if (btn.dataset.status !== 'confirmed') {
               btn.addEventListener('click', function(e) {
                 e.stopPropagation();
