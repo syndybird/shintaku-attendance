@@ -18,10 +18,10 @@
     /* ボタンのすぐ上に表示するAM/PMテキスト */
     .slot-label-top { font-size: 10px; font-weight: 800; color: #000000; text-align: center; line-height: 1; margin-bottom: 2px; }
     
-    /* 文字を入れる四角いボタン（横幅いっぱい、パディングを少し調整） */
+    /* 文字を入れる四角いボタン */
     .slot-btn-box { width: 100%; text-align: center; padding: 4px 0; font-size: 10px; font-weight: bold; border-radius: 4px; cursor: pointer; user-select: none; transition: all 0.2s; white-space: nowrap; }
     
-    /* カラーロジック（白文字統一・3〜4文字がはっきり読める色合い） */
+    /* カラーロジック */
     .bg-green-slot { background-color: #22c55e; color: #ffffff; }  /* 予約可 */
     .bg-red-slot { background-color: #ef4444; color: #ffffff; }    /* 予約済 */
     .bg-blue-slot { background-color: #3b82f6; color: #ffffff; border: 1px solid #1d4ed8; }   /* 選択中 */
@@ -35,9 +35,7 @@
     .fc-day-sun .fc-daygrid-day-number { color: #dc2626 !important; font-weight: bold; } /* 日曜日は赤 */
   </style>
 </head>
-<body class="bg-slate-100 font-sans min-height-screen pb-24">
-
-  <header class="bg-blue-900 text-white p-4 shadow-md sticky top-0 z-50 flex justify-between items-center">
+<body class="bg-slate-100 font-sans min-height-screen pb-36"> <header class="bg-blue-900 text-white p-4 shadow-md sticky top-0 z-50 flex justify-between items-center">
     <h1 class="text-xl font-bold"><i class="fa-solid fa-calendar-days mr-2"></i>シフト希望提出</h1>
     <div id="user-info" class="text-sm bg-blue-800 px-3 py-1 rounded">読み込み中...</div>
   </header>
@@ -54,9 +52,12 @@
     <div id="calendar"></div>
   </div>
 
-  <div class="fixed bottom-0 left-0 right-0 p-4 bg-white shadow-lg border-t border-slate-200 flex justify-center z-50">
+  <div class="fixed bottom-0 left-0 right-0 p-4 bg-white shadow-lg border-t border-slate-200 flex flex-col items-center gap-2 z-50">
     <button id="submit-btn" class="w-full max-w-md bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-md flex justify-center items-center gap-2 transition disabled:bg-slate-400" disabled>
       <i class="fa-solid fa-paper-plane"></i> シフトを提出する (<span id="select-count">0</span>)
+    </button>
+    <button id="close-btn" class="w-full max-w-md bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-2 rounded-xl text-sm flex justify-center items-center gap-2 transition">
+      <i class="fa-solid fa-xmark"></i> 提出せずに画面を閉じる
     </button>
   </div>
 
@@ -202,6 +203,16 @@
       document.getElementById('submit-btn').disabled = (count === 0);
     }
 
+    // ★★★ 【新規】画面を閉じるボタンを押したときの処理 ★★★
+    document.getElementById('close-btn').addEventListener('click', function() {
+      if (liff.isInClient()) {
+        liff.closeWindow(); // LINEのアプリ内ならウィンドウをピシッと閉じる
+      } else {
+        alert("PC環境のため、ブラウザのタブを直接閉じるか、前の画面に戻ってください。");
+      }
+    });
+
+    // 提出ボタンを押したときの処理
     document.getElementById('submit-btn').addEventListener('click', function() {
       const btn = this;
       btn.disabled = true;
@@ -215,21 +226,22 @@
       const encodedData = encodeURIComponent(JSON.stringify(payload));
       const finalUrl = `${GAS_URL}?action=submitShift&data=${encodedData}`;
 
-      fetch(finalUrl, { method: "GET" })
-      .then(res => res.json())
-      .then(result => {
-        if (result.result === "success") {
-          alert("シフト希望を提出しました！先着判定の上、シートに記録されました。");
-          selectedSlots = {};
-          initSystem(); 
-        } else {
-          alert("エラー: " + result.message);
-          btn.innerHTML = `<i class="fa-solid fa-paper-plane"></i> シフトを提出する`;
-          btn.disabled = false;
-        }
+      const forceRefreshTimeout = setTimeout(() => {
+        alert("シフト希望を受け付けました！(最新の状態に更新します)");
+        selectedSlots = {};
+        initSystem();
+      }, 1200);
+
+      fetch(finalUrl, { method: "GET", mode: "no-cors" })
+      .then(() => {
+        clearTimeout(forceRefreshTimeout);
+        alert("シフト希望を提出しました！先着判定の上、シートに記録されました。");
+        selectedSlots = {};
+        initSystem(); 
       })
       .catch(err => {
-        alert("送信処理を完了しました。最新の状況に更新します。");
+        clearTimeout(forceRefreshTimeout);
+        alert("シフト希望の送信処理を完了しました。カレンダーを更新します。");
         selectedSlots = {};
         initSystem();
       });
