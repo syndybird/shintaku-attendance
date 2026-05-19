@@ -87,7 +87,7 @@
               liff.login();
             } else {
               liff.getProfile().then(profile => {
-                userName = profile.displayName;
+                userName = profile.displayName.trim(); 
                 document.getElementById("user-info").innerText = "👤 " + userName;
                 initSystem();
               });
@@ -154,13 +154,20 @@
             const btn = document.createElement('div');
             btn.className = 'slot-btn-box';
 
+            // スプレッドシートのデータから該当枠を検索
             const match = currentSheetData.find(d => d.date === dateStr && d.slot === slot);
             
-            // 自分自身が「確定」しているかどうかの判定
-            const isMyConfirm = match && match.status === '確定' && match.name === userName;
+            // 🔥 シートの正しい構造に完全マッピング
+            // C列（status）＝ステータス、 D列（name）＝予約ユーザー
+            const sheetStatus = match && match.status ? String(match.status).trim() : "";
+            const sheetName = match && match.name ? String(match.name).trim() : "";
+            const currentLoginName = userName ? String(userName).trim() : "";
+
+            // 自分が「確定」しているかどうかの厳密な判定
+            const isMyConfirm = match && sheetStatus === '確定' && sheetName === currentLoginName;
 
             // -------------------------------------------------------------
-            // 🔥 【最優先ガード】日付に関係なく、自分が確定なら何が何でも水色！
+            // 【最優先ガード】自分が確定なら過去・現在問わず何が何でも水色！
             // -------------------------------------------------------------
             if (isMyConfirm) {
               btn.classList.add('bg-sky-slot');
@@ -169,7 +176,7 @@
 
             } else if (isPast) {
               // -----------------------------------------
-              // 【過去】働き終わったエリア（自分以外、または空き）
+              // 【過去】働き終わったエリア（自分以外、または空き枠）
               // -----------------------------------------
               btn.classList.add('bg-past-slot');
               btn.innerText = '終了';  
@@ -177,7 +184,7 @@
 
             } else if (isTooFuture) {
               // -----------------------------------------
-              // 【期間外】21日より先のエリア
+              // 【期間外】21日より先のフライング防止エリア
               // -----------------------------------------
               btn.classList.add('bg-past-slot');
               btn.innerText = '期間外';
@@ -188,14 +195,14 @@
               // 【今日〜21日後まで】リアルタイム募集エリア
               // -----------------------------------------
               if (match) {
-                if (match.status === '確定') {
-                  // 自分以外の確定（赤色ロック） ※自分の確定は最優先ガードで処理済
+                if (sheetStatus === '確定') {
+                  // 他人が確定した枠（赤色ロック）
                   btn.classList.add('bg-red-slot');
                   btn.innerText = '予約済';
                   btn.dataset.status = 'locked';
                 } else {
                   // ステータスが「予約済み（未確定）」の場合
-                  if (match.name === userName) {
+                  if (sheetName === currentLoginName) {
                     btn.classList.add('bg-blue-slot');
                     btn.innerText = '選択中';
                     btn.dataset.status = 'already_reserved_by_me';
