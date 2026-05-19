@@ -13,17 +13,18 @@
     .fc-daygrid-day-events { display: flex; flex-direction: column; gap: 4px; padding: 4px !important; }
     .slot-btn { text-align: center; padding: 6px 4px; font-size: 12px; font-weight: bold; border-radius: 4px; cursor: pointer; user-select: none; transition: all 0.2s; }
     
-    /* 【こだわり】カラーロジックと白文字・黒字の調整 */
-    .bg-green-slot { background-color: #22c55e; color: #ffffff; } /* 空き（緑枠・白文字） */
-    .bg-red-slot { background-color: #ef4444; color: #ffffff; }   /* 予約済（赤枠・白文字） */
-    .bg-blue-slot { background-color: #3b82f6; color: #ffffff; border: 2px solid #1d4ed8; }  /* 選択中（青枠・白文字） */
+    /* カラーロジックと白文字・黒字の調整 */
+    .bg-green-slot { background-color: #22c55e; color: #ffffff; }  /* 空き（緑枠・白文字） */
+    .bg-red-slot { background-color: #ef4444; color: #ffffff; }    /* 予約済（赤枠・白文字） */
+    .bg-blue-slot { background-color: #3b82f6; color: #ffffff; border: 2px solid #1d4ed8; }   /* 選択中（青枠・白文字） */
     .bg-purple-slot { background-color: #a855f7; color: #ffffff; border: 2px solid #6b21a8; } /* 競合（紫枠・白文字） */
+    .bg-sky-slot { background-color: #38bdf8; color: #ffffff; cursor: not-allowed; } /* 【新規】確定済（水色枠・白文字・クリック不可） */
     
     /* AM/PMの文字自体を強調するためのスタイル */
     .slot-text-main { color: #000000; font-weight: 800; margin-right: 4px; } /* 黒字のAM/PM */
     .slot-symbol { font-weight: 900; } /* 白文字の◯や✕ */
 
-    /* 【こだわり】土日の曜日カラー変更 */
+    /* 土日の曜日カラー変更 */
     .fc-day-sat .fc-col-header-cell-cushion,
     .fc-day-sat .fc-daygrid-day-number { color: #2563eb !important; font-weight: bold; } /* 土曜日は青 */
     .fc-day-sun .fc-col-header-cell-cushion,
@@ -37,11 +38,12 @@
     <div id="user-info" class="text-sm bg-blue-800 px-3 py-1 rounded">読み込み中...</div>
   </header>
 
-  <div class="max-w-md mx-auto m-3 p-3 bg-white rounded-lg shadow-sm grid grid-cols-4 gap-2 text-center text-xs font-bold">
-    <div class="p-1 bg-green-500 text-white rounded">緑：◯ 予約可</div>
-    <div class="p-1 bg-red-500 text-white rounded">赤：✕ 既約</div>
-    <div class="p-1 bg-blue-500 text-white rounded">青：選択中</div>
-    <div class="p-1 bg-purple-500 text-white rounded">紫：競合申請</div>
+  <div class="max-w-md mx-auto m-3 p-3 bg-white rounded-lg shadow-sm grid grid-cols-5 gap-1 text-center text-xs font-bold">
+    <div class="p-1 bg-green-500 text-white rounded">緑:◯ 可</div>
+    <div class="p-1 bg-red-500 text-white rounded">赤:✕ 既約</div>
+    <div class="p-1 bg-sky-400 text-white rounded">水色:確定</div>
+    <div class="p-1 bg-blue-500 text-white rounded">青:選択中</div>
+    <div class="p-1 bg-purple-500 text-white rounded">紫:競合</div>
   </div>
 
   <div class="max-w-md mx-auto p-2 bg-white rounded-lg shadow-md m-3">
@@ -55,12 +57,11 @@
   </div>
 
   <script>
-    // デプロイ済みのGASウェブアプリURL
     const GAS_URL = "https://script.google.com/macros/s/AKfycbxm7UaGS-K8ifm6zbqja199RqTt2GzIlRoMzGHjYjGW3TU_SlrtoJaz5vAw4GmQi0Wi/exec";
     
     let userName = "テストユーザー"; 
-    let currentSheetData = []; // サーバーから取得した最新状態
-    let selectedSlots = {};   // ユーザーが今ポチポチ選んだ枠情報
+    let currentSheetData = []; 
+    let selectedSlots = {};   
 
     // LIFF初期化
     document.addEventListener("DOMContentLoaded", function() {
@@ -82,7 +83,6 @@
         });
     });
 
-    // システム起動・カレンダー描画
     function initSystem() {
       fetch(`${GAS_URL}?action=getShift`)
         .then(res => res.json())
@@ -104,7 +104,6 @@
         height: 'auto',
         dayCellContent: function(e) { return e.dayNumberText.replace('日', ''); },
         
-        // 各日付のマスが描画されるときの処理
         dayCellDidMount: function(info) {
           const y = info.date.getFullYear();
           const m = String(info.date.getMonth() + 1).padStart(2, '0');
@@ -115,16 +114,19 @@
           if (!eventsContainer) return;
           eventsContainer.innerHTML = ''; 
 
-          // AMとPMの2つのスロットボタンを生成
           ['AM', 'PM'].forEach(slot => {
             const btn = document.createElement('div');
             btn.className = 'slot-btn';
             
-            // 現在のシートにあるこの日・この枠の状態を探す
             const match = currentSheetData.find(d => d.date === dateStr && d.slot === slot);
             
             if (match) {
-              if (match.status === '予約済み') {
+              if (match.status === '確定') {
+                // 【新規】確定済みの場合は水色にして、クリックイベントを設定しない（ロック）
+                btn.classList.add('bg-sky-slot');
+                btn.innerHTML = `<span class="slot-text-main">${slot}</span><span class="slot-symbol">確定</span>`;
+                btn.dataset.status = 'confirmed';
+              } else if (match.status === '予約済み') {
                 btn.classList.add('bg-red-slot');
                 btn.innerHTML = `<span class="slot-text-main">${slot}</span><span class="slot-symbol">✕</span>`;
                 btn.dataset.status = 'reserved';
@@ -134,42 +136,43 @@
                 btn.dataset.status = 'conflict';
               }
             } else {
-              // 空き枠は緑に◯
               btn.classList.add('bg-green-slot');
               btn.innerHTML = `<span class="slot-text-main">${slot}</span><span class="slot-symbol">◯</span>`;
               btn.dataset.status = 'available';
             }
 
-            // クリック時のカラー変更ロジック
-            btn.addEventListener('click', function(e) {
-              e.stopPropagation();
-              const key = `${dateStr}_${slot}`;
+            // 確定済みのスロットでなければクリックイベントを登録
+            if (btn.dataset.status !== 'confirmed') {
+              btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const key = `${dateStr}_${slot}`;
 
-              if (btn.dataset.status === 'available') {
-                if (selectedSlots[key]) {
-                  delete selectedSlots[key];
-                  btn.className = 'slot-btn bg-green-slot';
-                  btn.innerHTML = `<span class="slot-text-main">${slot}</span><span class="slot-symbol">◯</span>`;
-                } else {
-                  selectedSlots[key] = { date: dateStr, slot: slot, mode: 'normal' };
-                  btn.className = 'slot-btn bg-blue-slot';
-                  btn.innerHTML = `<span class="slot-text-main">${slot}</span><span class="slot-symbol">選択中</span>`;
+                if (btn.dataset.status === 'available') {
+                  if (selectedSlots[key]) {
+                    delete selectedSlots[key];
+                    btn.className = 'slot-btn bg-green-slot';
+                    btn.innerHTML = `<span class="slot-text-main">${slot}</span><span class="slot-symbol">◯</span>`;
+                  } else {
+                    selectedSlots[key] = { date: dateStr, slot: slot, mode: 'normal' };
+                    btn.className = 'slot-btn bg-blue-slot';
+                    btn.innerHTML = `<span class="slot-text-main">${slot}</span><span class="slot-symbol">選択中</span>`;
+                  }
+                } else if (btn.dataset.status === 'reserved' || btn.dataset.status === 'conflict') {
+                  if (selectedSlots[key]) {
+                    delete selectedSlots[key];
+                    btn.className = `slot-btn ${match.status === '予約済み' ? 'bg-red-slot' : 'bg-purple-slot'}`;
+                    btn.innerHTML = match.status === '予約済み' ? 
+                      `<span class="slot-text-main">${slot}</span><span class="slot-symbol">✕</span>` : 
+                      `<span class="slot-text-main">${slot}</span><span class="slot-symbol">競合中</span>`;
+                  } else {
+                    selectedSlots[key] = { date: dateStr, slot: slot, mode: 'force' };
+                    btn.className = 'slot-btn bg-purple-slot';
+                    btn.innerHTML = `<span class="slot-text-main">${slot}</span><span class="slot-symbol">競合申請</span>`;
+                  }
                 }
-              } else if (btn.dataset.status === 'reserved' || btn.dataset.status === 'conflict') {
-                if (selectedSlots[key]) {
-                  delete selectedSlots[key];
-                  btn.className = `slot-btn ${match.status === '予約済み' ? 'bg-red-slot' : 'bg-purple-slot'}`;
-                  btn.innerHTML = match.status === '予約済み' ? 
-                    `<span class="slot-text-main">${slot}</span><span class="slot-symbol">✕</span>` : 
-                    `<span class="slot-text-main">${slot}</span><span class="slot-symbol">競合中</span>`;
-                } else {
-                  selectedSlots[key] = { date: dateStr, slot: slot, mode: 'force' };
-                  btn.className = 'slot-btn bg-purple-slot';
-                  btn.innerHTML = `<span class="slot-text-main">${slot}</span><span class="slot-symbol">競合申請</span>`;
-                }
-              }
-              updateSubmitButton();
-            });
+                updateSubmitButton();
+              });
+            }
 
             eventsContainer.appendChild(btn);
           });
@@ -178,14 +181,12 @@
       calendar.render();
     }
 
-    // 提出ボタンの有効化と個数カウント
     function updateSubmitButton() {
       const count = Object.keys(selectedSlots).length;
       document.getElementById('select-count').innerText = count;
       document.getElementById('submit-btn').disabled = (count === 0);
     }
 
-    // 提出ボタンを押したときの処理
     document.getElementById('submit-btn').addEventListener('click', function() {
       const btn = this;
       btn.disabled = true;
