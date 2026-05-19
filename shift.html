@@ -14,7 +14,7 @@
     .slot-label-top { font-size: 10px; font-weight: 800; color: #000000; text-align: center; line-height: 1; margin-bottom: 2px; }
     .slot-btn-box { width: 100%; text-align: center; padding: 4px 0; font-size: 10px; font-weight: bold; border-radius: 4px; cursor: pointer; user-select: none; transition: all 0.2s; white-space: nowrap; }
 
-    /* カラーロジック */
+    /* カラークラス */
     .bg-green-slot { background-color: #22c55e; color: #ffffff; }  
     .bg-red-slot { background-color: #ef4444; color: #ffffff; cursor: not-allowed; }    
     .bg-blue-slot { background-color: #3b82f6; color: #ffffff; border: 1px solid #1d4ed8; }   
@@ -29,31 +29,48 @@
 </head>
 <body class="bg-slate-100 font-sans min-height-screen pb-36">
 
-  <header class="bg-blue-900 text-white p-4 shadow-md sticky top-0 z-50 flex justify-between items-center">
-    <h1 class="text-xl font-bold"><i class="fa-solid fa-calendar-days mr-2"></i>シフト希望提出</h1>
-    <div id="user-info" class="text-sm bg-blue-800 px-3 py-1 rounded">読み込み中...</div>
-  </header>
-
-  <div class="max-w-md mx-auto m-3 p-3 bg-white rounded-lg shadow-sm grid grid-cols-6 gap-1 text-center text-[10px] font-bold">
-    <div class="p-1 bg-green-500 text-white rounded">緑:予約可</div>
-    <div class="p-1 bg-blue-500 text-white rounded">青:本人予約</div>
-    <div class="p-1 bg-purple-500 text-white rounded">紫:他人予約</div>
-    <div class="p-1 bg-sky-400 text-white rounded">水色:確定</div>
-    <div class="p-1 bg-yellow-500 text-white rounded">黄:直近変更</div>
-    <div class="p-1 bg-red-500 text-white rounded">赤:予約済</div>
+  <div id="loading-screen" class="fixed inset-0 bg-slate-100 flex flex-col justify-center items-center z-[100]">
+    <i class="fa-solid fa-spinner animate-spin text-blue-900 text-4xl mb-4"></i>
+    <p class="text-slate-600 font-bold">アクセス権限を確認中...</p>
   </div>
 
-  <div class="max-w-md mx-auto p-2 bg-white rounded-lg shadow-md m-3">
-    <div id="calendar"></div>
+  <div id="gate-screen" class="hidden fixed inset-0 bg-slate-50 flex flex-col justify-center items-center p-6 text-center z-[90]">
+    <div class="bg-white p-8 rounded-2xl shadow-xl max-w-sm w-full border border-slate-200 flex flex-col items-center">
+      <i class="fa-solid fa-circle-xmark text-red-500 text-5xl mb-4"></i>
+      <h2 class="text-xl font-bold text-slate-800 mb-2">アクセス権限がありません</h2>
+      <p class="text-sm text-slate-500 leading-relaxed">
+        このシステムは、しんたく牧場の登録スタッフ専用です。<br>利用するには管理者に連絡してください。
+      </p>
+    </div>
   </div>
 
-  <div class="fixed bottom-0 left-0 right-0 p-4 bg-white shadow-lg border-t border-slate-200 flex flex-col items-center gap-2 z-50">
-    <button id="submit-btn" class="w-full max-w-md bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-md flex justify-center items-center gap-2 transition disabled:bg-slate-400" disabled>
-      <i class="fa-solid fa-paper-plane"></i> シフトを提出する (<span id="select-count">0</span>)
-    </button>
-    <button id="close-btn" class="w-full max-w-md bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-2 rounded-xl text-sm flex justify-center items-center gap-2 transition">
-      <i class="fa-solid fa-xmark"></i> 提出せずに画面を閉じる
-    </button>
+  <div id="main-content" class="hidden">
+    <header class="bg-blue-900 text-white p-4 shadow-md sticky top-0 z-50 flex justify-between items-center">
+      <h1 class="text-xl font-bold"><i class="fa-solid fa-calendar-days mr-2"></i>シフト希望提出</h1>
+      <div id="user-info" class="text-sm bg-blue-800 px-3 py-1 rounded">ログイン中...</div>
+    </header>
+
+    <div class="max-w-md mx-auto m-3 p-3 bg-white rounded-lg shadow-sm grid grid-cols-6 gap-1 text-center text-[10px] font-bold">
+      <div class="p-1 bg-green-500 text-white rounded">緑:予約可</div>
+      <div class="p-1 bg-blue-500 text-white rounded">青:本人予約</div>
+      <div class="p-1 bg-purple-500 text-white rounded">紫:他人予約</div>
+      <div class="p-1 bg-sky-400 text-white rounded">水色:確定</div>
+      <div class="p-1 bg-yellow-500 text-white rounded">黄:直近変更</div>
+      <div class="p-1 bg-red-500 text-white rounded">赤:予約済</div>
+    </div>
+
+    <div class="max-w-md mx-auto p-2 bg-white rounded-lg shadow-md m-3">
+      <div id="calendar"></div>
+    </div>
+
+    <div class="fixed bottom-0 left-0 right-0 p-4 bg-white shadow-lg border-t border-slate-200 flex flex-col items-center gap-2 z-50">
+      <button id="submit-btn" class="w-full max-w-md bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-md flex justify-center items-center gap-2 transition disabled:bg-slate-400" disabled>
+        <i class="fa-solid fa-paper-plane"></i> シフトを提出する (<span id="select-count">0</span>)
+      </button>
+      <button id="close-btn" class="w-full max-w-md bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-2 rounded-xl text-sm flex justify-center items-center gap-2 transition">
+        <i class="fa-solid fa-xmark"></i> 提出せずに画面を閉じる
+      </button>
+    </div>
   </div>
 
   <script>
@@ -63,34 +80,48 @@
     const FIXED_DAYS = 7;      
     const RECRUIT_DAYS = 14;   
 
-    let userName = "テストユーザー"; 
-    let userId = "TEST_USER_ID"; // ★PCテスト用のダミーID（シートのF列にこれを書けばPCでも検証可能）
+    let userName = ""; 
+    let userId = ""; 
     let currentSheetData = []; 
     let selectedSlots = {};   
 
     document.addEventListener("DOMContentLoaded", function() {
       liff.init({ liffId: LIFF_ID })
         .then(() => {
-          if (!liff.isInClient() && !liff.isLoggedIn()) {
-            document.getElementById("user-info").innerText = "⚠️ PCテストモード";
-            initSystem();
+          if (!liff.isLoggedIn()) {
+            liff.login();
           } else {
-            if (!liff.isLoggedIn()) {
-              liff.login();
-            } else {
-              liff.getProfile().then(profile => {
-                userName = profile.displayName.trim(); 
-                userId = profile.userId; // ★LINEの固有ユーザーIDを100%確実に取得
-                document.getElementById("user-info").innerText = "👤 " + userName;
-                initSystem();
-              });
-            }
+            liff.getProfile().then(profile => {
+              userName = profile.displayName.trim(); 
+              userId = profile.userId; 
+              checkUserAccess();
+            });
           }
         }).catch(err => {
-          document.getElementById("user-info").innerText = "⚠️ テストモード";
-          initSystem();
+          alert("LINEログインの初期化に失敗しました。LINEアプリ内から開き原してください。");
         });
     });
+
+    function checkUserAccess() {
+      fetch(`${GAS_URL}?action=checkUser&userId=${userId}`)
+        .then(res => res.json())
+        .then(result => {
+          document.getElementById("loading-screen").classList.add("hidden");
+          
+          if (result.access === "granted") {
+            document.getElementById("main-content").classList.remove("hidden");
+            document.getElementById("user-info").innerText = "👤 " + userName;
+            initSystem();
+          } else {
+            // 知らない人の場合はこの拒否画面を出し、裏のカレンダーやボタンは1ミリも描画しません
+            document.getElementById("gate-screen").classList.remove("hidden");
+          }
+        })
+        .catch(err => {
+          document.getElementById("loading-screen").className = "fixed inset-0 bg-slate-100 flex flex-col justify-center items-center z-[100] text-red-600 font-bold p-4 text-center";
+          document.getElementById("loading-screen").innerHTML = "<i class='fa-solid fa-triangle-exclamation text-3xl mb-2'></i><br>通信エラーが発生しました。再度お試しください。";
+        });
+    }
 
     function initSystem() {
       fetch(`${GAS_URL}?action=getShift`)
@@ -99,8 +130,7 @@
           currentSheetData = data;
           renderCalendar();
         }).catch(err => {
-          alert("データ通信に失敗しました。電波の良い場所で再開してください。");
-          renderCalendar();
+          alert("シフトデータの取得に失敗しました。");
         });
     }
 
@@ -131,9 +161,9 @@
           const cellDate = new Date(info.date);
           cellDate.setHours(0, 0, 0, 0);
 
-          const isPast = cellDate < today;
-          const isFixedPeriod = cellDate >= today && cellDate <= endOfFixedDate; 
-          const isTooFuture = cellDate > endOfRecruitDate;
+          const isPast = cellDate < today; 
+          const isFixedPeriod = cellDate <= endOfFixedDate; 
+          const isTooFuture = cellDate > endOfRecruitDate; 
 
           const eventsContainer = info.el.querySelector('.fc-daygrid-day-events');
           if (!eventsContainer) return;
@@ -156,7 +186,6 @@
             const sheetStatus = match && match.status ? String(match.status).trim() : "";
             const sheetUid = match && match.userId ? String(match.userId).trim() : "";
 
-            // 🌟【最強の判定式】LINEのユーザーID同士が完全に一致するかどうかだけで判定！
             const isMyName = (sheetUid !== "" && sheetUid === userId);
 
             if (isPast) {
@@ -228,7 +257,7 @@
               }
             }
 
-            // クリックイベント処理
+            // クリックイベント
             const status = btn.dataset.status;
             if (status !== 'confirmed_lock' && status !== 'past_lock' && status !== 'future_lock' && status !== 'other_fixed_lock' && status !== 'other_reserved_lock') {
               btn.addEventListener('click', function(e) {
@@ -282,14 +311,12 @@
     function updateSubmitButton() {
       const count = Object.keys(selectedSlots).length;
       document.getElementById('select-count').innerText = count;
-      document.getElementById('submit-btn').disabled = false; 
+      document.getElementById('submit-btn').disabled = (count === 0); 
     }
 
     document.getElementById('close-btn').addEventListener('click', function() {
       if (liff.isInClient()) {
         liff.closeWindow(); 
-      } else {
-        alert("PC環境のため、ブラウザのタブを直接閉じるか、前の画面に戻ってください。");
       }
     });
 
@@ -300,7 +327,7 @@
 
       const payload = {
         userName: userName,
-        userId: userId, // ★送信データにユーザーIDを追加
+        userId: userId, 
         selections: Object.values(selectedSlots)
       };
 
