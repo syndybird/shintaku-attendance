@@ -21,7 +21,7 @@
     /* 文字を入れる四角いボタン */
     .slot-btn-box { width: 100%; text-align: center; padding: 4px 0; font-size: 10px; font-weight: bold; border-radius: 4px; cursor: pointer; user-select: none; transition: all 0.2s; white-space: nowrap; }
 
-    /* カラーロジック（紫を廃止し、シンプルに統一） */
+    /* カラーロジック */
     .bg-green-slot { background-color: #22c55e; color: #ffffff; }  /* 予約可 */
     .bg-red-slot { background-color: #ef4444; color: #ffffff; }    /* 予約済（他人） */
     .bg-blue-slot { background-color: #3b82f6; color: #ffffff; border: 1px solid #1d4ed8; }   /* 選択中 */
@@ -68,9 +68,8 @@
     const GAS_URL = "https://script.google.com/macros/s/AKfycbxm7UaGS-K8ifm6zbqja199RqTt2GzIlRoMzGHjYjGW3TU_SlrtoJaz5vAw4GmQi0Wi/exec";
     const LIFF_ID = "2010136950-3fse6ErK";
 
-    // 将来の管理画面用の設定変数
-    const FIXED_DAYS = 7;      // 直近の確定・直前募集日数
-    const RECRUIT_DAYS = 14;   // その後に続く通常募集日数
+    const FIXED_DAYS = 7;      
+    const RECRUIT_DAYS = 14;   
 
     let userName = "テストユーザー"; 
     let currentSheetData = []; 
@@ -116,7 +115,6 @@
       const today = new Date();
       today.setHours(0, 0, 0, 0);
 
-      // 募集最終日の境界線計算
       const endOfRecruitDate = new Date(today);
       endOfRecruitDate.setDate(endOfRecruitDate.getDate() + FIXED_DAYS + RECRUIT_DAYS);
 
@@ -137,7 +135,6 @@
           const cellDate = new Date(info.date);
           cellDate.setHours(0, 0, 0, 0);
 
-          // エリア判定
           const isPast = cellDate < today;
           const isTooFuture = cellDate > endOfRecruitDate;
 
@@ -157,29 +154,30 @@
             const btn = document.createElement('div');
             btn.className = 'slot-btn-box';
 
-            // スプレッドシートのデータから該当枠を検索
             const match = currentSheetData.find(d => d.date === dateStr && d.slot === slot);
             
-            // この枠に自分がアサインされているか（名前一致かつ確定）
+            // 自分自身が「確定」しているかどうかの判定
             const isMyConfirm = match && match.status === '確定' && match.name === userName;
 
-            if (isPast) {
+            // -------------------------------------------------------------
+            // 🔥 【最優先ガード】日付に関係なく、自分が確定なら何が何でも水色！
+            // -------------------------------------------------------------
+            if (isMyConfirm) {
+              btn.classList.add('bg-sky-slot');
+              btn.innerText = '確定';
+              btn.dataset.status = 'confirmed';
+
+            } else if (isPast) {
               // -----------------------------------------
-              // 【過去】働き終わった実績エリア
+              // 【過去】働き終わったエリア（自分以外、または空き）
               // -----------------------------------------
-              if (isMyConfirm) {
-                btn.classList.add('bg-sky-slot');
-                btn.innerText = '確定'; // 自分が働いた実績は水色で残る
-                btn.dataset.status = 'confirmed';
-              } else {
-                btn.classList.add('bg-past-slot');
-                btn.innerText = '終了';  // 自分以外、または空き枠はグレー
-                btn.dataset.status = 'locked';
-              }
+              btn.classList.add('bg-past-slot');
+              btn.innerText = '終了';  
+              btn.dataset.status = 'locked';
 
             } else if (isTooFuture) {
               // -----------------------------------------
-              // 【期間外】21日より先のフライング防止エリア
+              // 【期間外】21日より先のエリア
               // -----------------------------------------
               btn.classList.add('bg-past-slot');
               btn.innerText = '期間外';
@@ -187,46 +185,34 @@
 
             } else {
               // -----------------------------------------
-              // 【今日〜21日後まで】リアルタイム受付・確認エリア
+              // 【今日〜21日後まで】リアルタイム募集エリア
               // -----------------------------------------
               if (match) {
                 if (match.status === '確定') {
-                  if (match.name === userName) {
-                    // 自分が確定した枠（水色ロック）
-                    btn.classList.add('bg-sky-slot');
-                    btn.innerText = '確定';
-                    btn.dataset.status = 'confirmed';
-                  } else {
-                    // 他人が確定した枠（赤色ロック）
-                    btn.classList.add('bg-red-slot');
-                    btn.innerText = '予約済';
-                    btn.dataset.status = 'locked';
-                  }
+                  // 自分以外の確定（赤色ロック） ※自分の確定は最優先ガードで処理済
+                  btn.classList.add('bg-red-slot');
+                  btn.innerText = '予約済';
+                  btn.dataset.status = 'locked';
                 } else {
                   // ステータスが「予約済み（未確定）」の場合
                   if (match.name === userName) {
-                    // 自分が過去に予約を出して、まだ結果待ちの状態（青色にして選択解除も可能に）
                     btn.classList.add('bg-blue-slot');
                     btn.innerText = '選択中';
                     btn.dataset.status = 'already_reserved_by_me';
-                    // 最初から選択中扱いにしておく
                     selectedSlots[`${dateStr}_${slot}`] = { date: dateStr, slot: slot, mode: 'normal' };
                   } else {
-                    // 他の誰かが予約して結果待ちの状態（赤色でロック。早い者勝ちなので触らせない）
                     btn.classList.add('bg-red-slot');
                     btn.innerText = '予約済';
                     btn.dataset.status = 'locked';
                   }
                 }
               } else {
-                // まだ誰も入っていない、または直近7日の空き枠（緑で誰でも予約可能！）
                 btn.classList.add('bg-green-slot');
                 btn.innerText = '予約可';
                 btn.dataset.status = 'available';
               }
             }
 
-            // クリックイベントの登録（ロック枠・確定枠以外）
             if (btn.dataset.status !== 'confirmed' && btn.dataset.status !== 'locked') {
               btn.addEventListener('click', function(e) {
                 e.stopPropagation();
@@ -243,14 +229,11 @@
                     btn.innerText = '選択中';
                   }
                 } else if (btn.dataset.status === 'already_reserved_by_me') {
-                  // 自分がすでに予約済みの枠をタップしたら、キャンセル（枠解放）の動きにする
                   if (!selectedSlots[key]) {
-                    // 再選択
                     selectedSlots[key] = { date: dateStr, slot: slot, mode: 'normal' };
                     btn.className = 'slot-btn-box bg-blue-slot';
                     btn.innerText = '選択中';
                   } else {
-                    // キャンセル
                     delete selectedSlots[key];
                     btn.className = 'slot-btn-box bg-green-slot';
                     btn.innerText = '予約可';
@@ -266,13 +249,12 @@
         }
       });
       calendar.render();
-      updateSubmitButton(); // 初期選択数のカウント更新
+      updateSubmitButton(); 
     }
 
     function updateSubmitButton() {
       const count = Object.keys(selectedSlots).length;
       document.getElementById('select-count').innerText = count;
-      // 読み込み時などに最初から選択されているものがある場合もあるため、常にボタンは押せるか連動
       document.getElementById('submit-btn').disabled = false; 
     }
 
