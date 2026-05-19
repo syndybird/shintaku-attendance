@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>【管理者用】SHINTAKU WORKS シフト管理</title>
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <style>
+    .fc-daygrid-day-events { display: flex; flex-direction: column; gap: 4px; padding: 4px !important; }
+    .slot-btn { text-align: left; padding: 4px 6px; font-size: 11px; font-weight: bold; border-radius: 4px; cursor: pointer; user-select: none; transition: all 0.2s; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    
+    .bg-green-slot { background-color: #e2fbd7; color: #15803d; border: 1px solid #bbf7d0; } /* 空き */
+    .bg-red-slot { background-color: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; }   /* 予約あり */
+    .bg-purple-slot { background-color: #f3e8ff; color: #6b21a8; border: 1px solid #e9d5ff; } /* 競合あり */
+    .bg-sky-slot { background-color: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; }    /* 確定済み */
+
+    .fc-day-sat .fc-col-header-cell-cushion, .fc-day-sat .fc-daygrid-day-number { color: #2563eb !important; }
+    .fc-day-sun .fc-col-header-cell-cushion, .fc-day-sun .fc-daygrid-day-number { color: #dc2626 !important; }
+  </style>
+</head>
+<body class="bg-slate-900 text-slate-100 font-sans min-h-screen pb-12">
+
+  <header class="bg-slate-800 text-white p-4 shadow-md sticky top-0 z-50 flex justify-between items-center border-b border-slate-700">
+    <h1 class="text-xl font-bold text-sky-400"><i class="fa-solid fa-lock-open mr-2"></i>【管理者専用】シフト調整画面</h1>
+    <span class="text-xs bg-slate-700 px-3 py-1 rounded text-slate-300">スプレッドシート直結</span>
+  </header>
+
+  <div class="max-w-4xl mx-auto p-4">
+    <div class="bg-slate-800 rounded-xl p-4 shadow-xl border border-slate-700">
+      <div id="calendar" class="text-slate-800 bg-white p-2 rounded-lg"></div>
+    </div>
+  </div>
+
+  <div id="admin-modal" class="fixed inset-0 bg-black/70 flex items-center justify-center hidden z-50 p-4">
+    <div class="bg-slate-800 rounded-2xl max-w-sm w-full p-6 border border-slate-700 shadow-2xl text-center">
+      <h3 id="modal-title" class="text-lg font-bold text-white mb-2">日時</h3>
+      <p id="modal-user" class="text-sm text-slate-400 mb-6">申請者: なし</p>
+      
+      <div class="grid grid-cols-1 gap-3">
+        <button id="btn-confirm-act" class="bg-sky-600 hover:bg-sky-500 text-white font-bold py-3 rounded-xl transition flex items-center justify-center gap-2">
+          <i class="fa-solid fa-check"></i> この枠を「確定(水色)」にする
+        </button>
+        <button id="btn-delete-act" class="bg-rose-700 hover:bg-rose-600 text-white font-bold py-3 rounded-xl transition flex items-center justify-center gap-2">
+          <i class="fa-solid fa-trash"></i> 枠を削除して「空き(緑)」に戻す
+        </button>
+        <button id="btn-close-act" class="bg-slate-700 hover:bg-slate-600 text-slate-300 font-bold py-2 rounded-xl transition mt-2">
+          閉じる
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbxm7UaGS-K8ifm6zbqja199RqTt2GzIlRoMzGHjYjGW3TU_SlrtoJaz5vAw4GmQi0Wi/exec";
+    let currentSheetData = [];
+    let activeTarget = null;
+
+    document.addEventListener("DOMContentLoaded", function() {
+      initAdminSystem();
+    });
+
+    function initAdminSystem() {
+      fetch(`${GAS_URL}?action=getShift`)
+        .then(res => res.json())
+        .then(data => {
+          currentSheetData = data;
+          renderAdminCalendar();
+        });
+    }
+
+    function renderAdminCalendar() {
+      const calendarEl = document.getElementById('calendar');
+      const calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        locale: 'ja',
+        headerToolbar: { left: 'prev', center: 'title', right: 'next' },
+        height: 'auto',
+        dayCellContent: function(e) { return e.dayNumberText.replace('日', ''); },
+        
+        dayCellDidMount: function(info) {
+          const y = info.date.getFullYear();
+          const m = String(info.date.getMonth() + 1).padStart(2, '0');
+          const d = String(info.date.getDate()).padStart(2, '0');
+          const dateStr = `${y}-${m}-${d}`;
+
+          const eventsContainer = info.el.querySelector('.fc-daygrid-day-events');
+          if (!eventsContainer) return;
+          eventsContainer.innerHTML = ''; 
+
+          ['AM', 'PM'].forEach(slot => {
+            const btn = document.createElement('div');
+            btn.className = 'slot-btn';
+            
+            const match = currentSheetData.find(d => d.date === dateStr && d.slot === slot);
+            
+            if (match) {
+              if (match.status === '確定') {
+                btn.classList.add('bg-sky-slot');
+                btn.innerText = `[確] ${slot}:${match.user}`;
+              } else if (match.status === '予約済み') {
+                btn.classList.add('bg-red-slot');
+                btn.innerText = `${slot}:${match.user}`;
+              } else if (match.status === '競合') {
+                btn.classList.add('bg-purple-slot');
+                btn.innerText = `[競] ${slot}:${match.user}`;
+              }
+              
+              // 管理者はデータが入っている枠をクリックして調整できる
+              btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                openAdminModal(dateStr, slot, match.user);
+              });
+            } else {
+              btn.classList.add('bg-green-slot');
+              btn.innerText = `${slot}: 空き`;
+            }
+
+            eventsContainer.appendChild(btn);
+          });
+        }
+      });
+      calendar.render();
+    }
+
+    function openAdminModal(date, slot, user) {
+      activeTarget = { date: date, slot: slot };
+      document.getElementById("modal-title").innerText = `${date} 【${slot}】`;
+      document.getElementById("modal-user").innerText = `申請者: ${user}`;
+      document.getElementById("admin-modal").classList.remove("hidden");
+    }
+
+    // モーダルを閉じる
+    document.getElementById("btn-close-act").addEventListener("click", () => {
+      document.getElementById("admin-modal").classList.add("hidden");
+    });
+
+    // 「確定」ボタン処理
+    document.getElementById("btn-confirm-act").addEventListener("click", () => {
+      executeAdminAction("確定");
+    });
+
+    // 「削除」ボタン処理
+    document.getElementById("btn-delete-act").addEventListener("click", () => {
+      executeAdminAction("削除");
+    });
+
+    function executeAdminAction(status) {
+      if (!activeTarget) return;
+      
+      const payload = { date: activeTarget.date, slot: activeTarget.slot, status: status };
+      const encodedData = encodeURIComponent(JSON.stringify(payload));
+      const finalUrl = `${GAS_URL}?action=adminConfirm&data=${encodedData}`;
+
+      document.getElementById("admin-modal").classList.add("hidden");
+
+      fetch(finalUrl, { method: "GET" })
+        .then(res => res.json())
+        .then(result => {
+          if (result.result === "success") {
+            initAdminSystem(); // カレンダー再読み込み
+          } else {
+            alert("エラー: " + result.message);
+          }
+        });
+    }
+  </script>
+</body>
+</html>
