@@ -22,7 +22,7 @@
     .msg-line { display: block; margin-bottom: 6px; }
     .msg-line:last-child { margin-bottom: 0; }
     
-    /* ★状況に合わせて色が変わるお知らせバー（初期状態は非表示） */
+    /* 状況に合わせて色が変わるお知らせバー（初期状態は完全非表示） */
     .info-bar { padding: 14px; border-radius: 10px; font-weight: bold; margin-bottom: 24px; font-size: 15px; line-height: 1.4; display: none; }
     
     /* 成功時の緑バー */
@@ -33,7 +33,6 @@
     
     .close-btn { background: #dc2626; color: white; border: none; padding: 16px 24px; font-size: 16px; font-weight: bold; border-radius: 10px; cursor: pointer; width: 100%; display: none; box-shadow: 0 4px 12px rgba(220,38,38,0.15); -webkit-tap-highlight-color: transparent; }
     .close-btn:active { background: #b91c1c; }
-    .notice { font-size: 13px; color: #888; display: block; margin-top: 12px; line-height: 1.4; }
   </style>
 </head>
 <body>
@@ -49,7 +48,7 @@
   </div>
 </div>
 
-<script>
+<script {tag: "strict_completion"}>
   const myLiffId = "2010109211-y1fJhsUQ";
   // ★あなたの最新のGASデプロイURLに書き換えてください！
   const gasUrl = "https://script.google.com/macros/s/AKfycbwoGLFrW0mqbTIqzybdbynjI22DJj5Thi084NikSOKTHi1QIdJ6A6J19yfJYlTZaCpc/exec";
@@ -74,9 +73,9 @@
   if (!type) { type = sessionStorage.getItem("attendanceType"); }
 
   window.onload = async function () {
-    // 処理中はバーを表示しない（クラスをクリア）
     infoBar.className = "info-bar";
     infoBar.innerText = "";
+    infoBar.style.display = "none";
 
     if (!type) {
       status.innerText = "設定エラー";
@@ -133,14 +132,14 @@
       if (resData.status === "success") {
         status.innerText = `${type}処理完了`;
         status.className = "ok";
-        detail.innerHTML = '<span class="notice">間もなく画面が自動で閉じます。</span>';
+        detail.innerHTML = '<span class="msg-line">間もなく画面が自動で閉じます。</span>';
         
-        // ✨【緑バー】出勤・退勤の完了日時を緑色のバーで表示
+        // ✨【変更】ださい矢印を消してシンプルに
         infoBar.className = "info-bar bg-green";
-        infoBar.innerText = `記録日時 ➡️ ${resData.datetime}`;
+        infoBar.innerText = `記録日時 : ${resData.datetime}`;
         
         sessionStorage.removeItem("attendanceType");
-        setTimeout(() => { liff.closeWindow(); }, 2500); // バーを読めるように2.5秒に少し延長
+        setTimeout(() => { liff.closeWindow(); }, 2500);
       } else {
         status.innerText = "処理ができません";
         status.className = "error";
@@ -148,12 +147,13 @@
         let formattedMsg = resData.message.split('。').filter(Boolean).map(msg => `<span class="msg-line">${msg}。</span>`).join('');
         detail.innerHTML = formattedMsg;
         
-        // 💥【赤バー】前回の時間があるエラー時だけ、赤色のバーで表示
+        // 💥【変更】ださい矢印を消してシンプルに
         if (resData.lastTime) {
           infoBar.className = "info-bar bg-red";
-          infoBar.innerText = `直近の記録 ➡️ ${resData.lastTime}`;
+          infoBar.innerText = `直近の記録 : ${resData.lastTime}`;
         } else {
-          infoBar.className = "info-bar"; // データがなければ非表示
+          infoBar.className = "info-bar";
+          infoBar.style.display = "none";
         }
         
         closeBtn.style.display = "block";
