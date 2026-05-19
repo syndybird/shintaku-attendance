@@ -28,7 +28,7 @@
     .bg-purple-slot { background-color: #a855f7; color: #ffffff; border: 1px solid #6b21a8; } /* 競合中 */
     .bg-sky-slot { background-color: #38bdf8; color: #ffffff; cursor: not-allowed; } /* 確定 */
 
-    /* 【新規】過去日のボタン専用デザイン（グレーアウト、タップ禁止） */
+    /* 過去日・確定期間の未配置・未来の期間外のボタン共通デザイン（グレーアウト、タップ禁止） */
     .bg-past-slot { background-color: #cbd5e1 !important; color: #64748b !important; border: none !important; cursor: not-allowed !important; opacity: 0.6; }
 
     /* 土日の曜日カラー変更 */
@@ -69,6 +69,10 @@
   <script>
     const GAS_URL = "https://script.google.com/macros/s/AKfycbxm7UaGS-K8ifm6zbqja199RqTt2GzIlRoMzGHjYjGW3TU_SlrtoJaz5vAw4GmQi0Wi/exec";
     const LIFF_ID = "2010136950-3fse6ErK";
+
+    // ★将来的に admin.html から自由に変更できるように仕込んだ変数群
+    const FIXED_DAYS = 7;      // 今日から数えて「確定期間（変更不可）」にする日数
+    const RECRUIT_DAYS = 14;   // 確定期間の後に続く「募集期間（自由入力）」の日数
 
     let userName = "テストユーザー"; 
     let currentSheetData = []; 
@@ -111,9 +115,18 @@
     }
 
     function renderCalendar() {
-      // 本日の日付を時間抜きで取得
+      // 基準となる本日の日付（時間抜き）
       const today = new Date();
       today.setHours(0, 0, 0, 0);
+
+      // 【自動境界線の計算】
+      // 確定期間の最終日（本日から7日後）
+      const endOfFixedDate = new Date(today);
+      endOfFixedDate.setDate(endOfFixedDate.getDate() + FIXED_DAYS);
+
+      // 募集期間の最終日（確定期間の最終日からさらに14日後）
+      const endOfRecruitDate = new Date(endOfFixedDate);
+      endOfRecruitDate.setDate(endOfRecruitDate.getDate() + RECRUIT_DAYS);
 
       const calendarEl = document.getElementById('calendar');
       const calendar = new FullCalendar.Calendar(calendarEl, {
@@ -129,10 +142,15 @@
           const d = String(info.date.getDate()).padStart(2, '0');
           const dateStr = `${y}-${m}-${d}`;
 
-          // このマスが「今日より前の過去日」かどうかを判定
+          // マスの日付をセット（時間抜き）
           const cellDate = new Date(info.date);
           cellDate.setHours(0, 0, 0, 0);
+
+          // エリア判定
           const isPast = cellDate < today;
+          const isFixedPeriod = cellDate >= today && cellDate <= endOfFixedDate;
+          const isRecruitPeriod = cellDate > endOfFixedDate && cellDate <= endOfRecruitDate;
+          const isTooFuture = cellDate > endOfRecruitDate;
 
           const eventsContainer = info.el.querySelector('.fc-daygrid-day-events');
           if (!eventsContainer) return;
@@ -152,14 +170,31 @@
 
             const match = currentSheetData.find(d => d.date === dateStr && d.slot === slot);
 
-            // 【過去日ロックのロジック】
             if (isPast) {
-              // 過去日はデータが何であれ一律グレーアウト
+              // -----------------------------------------
+              // 【過去エリア】一律ロック
+              // -----------------------------------------
               btn.classList.add('bg-past-slot');
               btn.innerText = match && match.status === '確定' ? '確定' : '終了';
-              btn.dataset.status = 'past_locked'; // クリックイベントを発生させない目印
-            } else {
-              // 今日以降は通常のカラーロジック
+              btn.dataset.status = 'locked';
+
+            } else if (isFixedPeriod) {
+              // -----------------------------------------
+              // 【① 確定エリア（7日間）】変更不可のロック
+              // -----------------------------------------
+              if (match && match.status === '確定') {
+                btn.classList.add('bg-sky-slot');
+                btn.innerText = '確定';  // 出勤決定したスタッフ向け
+              } else {
+                btn.classList.add('bg-past-slot');
+                btn.innerText = '受付終了'; // 入れなかった、または募集終了したマス
+              }
+              btn.dataset.status = 'locked';
+
+            } else if (isRecruitPeriod) {
+              // -----------------------------------------
+              // 【② 募集エリア（14日間）】スタッフが自由に選べる主役期間
+              // -----------------------------------------
               if (match) {
                 if (match.status === '確定') {
                   btn.classList.add('bg-sky-slot');
@@ -179,10 +214,18 @@
                 btn.innerText = '予約可';
                 btn.dataset.status = 'available';
               }
+
+            } else if (isTooFuture) {
+              // -----------------------------------------
+              // 【③ 期間外エリア】まだ集めていない先の期間をロック
+              // -----------------------------------------
+              btn.classList.add('bg-past-slot');
+              btn.innerText = '期間外';
+              btn.dataset.status = 'locked';
             }
 
-            // 今日以降、かつ「確定」以外のボタンだけクリックできるようにする
-            if (btn.dataset.status !== 'confirmed' && btn.dataset.status !== 'past_locked') {
+            // ロック中（locked）と確定（confirmed）以外だけクリック可能
+            if (btn.dataset.status !== 'confirmed' && btn.dataset.status !== 'locked') {
               btn.addEventListener('click', function(e) {
                 e.stopPropagation();
                 const key = `${dateStr}_${slot}`;
