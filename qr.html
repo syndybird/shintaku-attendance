@@ -248,7 +248,6 @@
       height: 50mm !important;
     }
 
-    
     .link-pill {
       text-decoration: none;
       transition: .18s ease;
@@ -260,7 +259,6 @@
       background: rgba(255,255,255,.96);
       box-shadow: 0 10px 22px rgba(23, 32, 51, .12);
     }
-
 
     .pill {
       margin-top: 4mm;
@@ -428,7 +426,7 @@
               <div id="qr-in" class="qr-box"></div>
             </div>
 
-            <a class="pill link-pill" href="https://liff.line.me/2010109211-y1fJhsUQ?type=出勤" target="_blank">CLOCK IN ↗</a>
+            <a class="pill link-pill" href="https://line.me/R/app/2010109211-y1fJhsUQ?type=出勤" target="_blank">CLOCK IN ↗</a>
           </div>
         </div>
 
@@ -452,7 +450,7 @@
               <div id="qr-out" class="qr-box"></div>
             </div>
 
-            <a class="pill link-pill" href="https://liff.line.me/2010109211-y1fJhsUQ?type=退勤" target="_blank">CLOCK OUT ↗</a>
+            <a class="pill link-pill" href="https://line.me/R/app/2010109211-y1fJhsUQ?type=退勤" target="_blank">CLOCK OUT ↗</a>
           </div>
         </div>
       </section>
@@ -487,7 +485,7 @@
         <div class="note-box">
           <h2>注意</h2>
           <ul>
-            <li>出勤と退勤を間違えないよう確認してください。</li>
+            <li>出勤と退勤を間違えないよう確認してください.</li>
             <li>通信環境の良い場所で操作してください。</li>
           </ul>
         </div>
@@ -514,13 +512,14 @@
       correctLevel: QRCode.CorrectLevel.H
     };
 
+    // ▼ 生成されるQRコードの埋め込みURLを強制起動URLに変更 ▼
     new QRCode(document.getElementById("qr-in"), {
-      text: "https://liff.line.me/2010109211-y1fJhsUQ?type=出勤",
+      text: "https://line.me/R/app/2010109211-y1fJhsUQ?type=出勤",
       ...qrOptions
     });
 
     new QRCode(document.getElementById("qr-out"), {
-      text: "https://liff.line.me/2010109211-y1fJhsUQ?type=退勤",
+      text: "https://line.me/R/app/2010109211-y1fJhsUQ?type=退勤",
       ...qrOptions
     });
   </script>
