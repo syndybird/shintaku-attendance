@@ -4,61 +4,473 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SHINTAKU WORKS シフト予約</title>
+
   <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+
   <style>
+    :root {
+      --ink: #172026;
+      --muted: #66737c;
+      --paper: #fffdf8;
+      --surface: rgba(255, 255, 255, 0.88);
+      --line: rgba(24, 48, 40, 0.12);
+      --brand: #315f52;
+      --brand-dark: #18382f;
+      --sage: #9fb8a8;
+      --mist: #dce9e6;
+      --cream: #f7f1e7;
+      --apricot: #e8a26d;
+    }
+
+    html {
+      background: #f4f0e8;
+    }
+
+    body {
+      color: var(--ink);
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at 12% 8%, rgba(159, 184, 168, 0.28), transparent 28%),
+        radial-gradient(circle at 88% 0%, rgba(232, 162, 109, 0.18), transparent 26%),
+        linear-gradient(180deg, #f8f4ec 0%, #eef4f1 100%);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .app-shell {
+      max-width: 520px;
+      margin: 0 auto;
+      padding: 14px 14px 148px;
+    }
+
+    .top-card {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      margin: 0 -14px 14px;
+      padding: 14px 16px 16px;
+      color: #fff;
+      background:
+        linear-gradient(135deg, rgba(24, 56, 47, 0.98), rgba(49, 95, 82, 0.96)),
+        radial-gradient(circle at top right, rgba(232, 162, 109, 0.35), transparent 35%);
+      box-shadow: 0 14px 34px rgba(24, 56, 47, 0.22);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.18);
+      backdrop-filter: blur(12px);
+    }
+
+    .brand-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .brand-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 900;
+      letter-spacing: 0.02em;
+      line-height: 1.15;
+    }
+
+    .brand-icon {
+      width: 38px;
+      height: 38px;
+      border-radius: 15px;
+      display: grid;
+      place-items: center;
+      background: rgba(255, 255, 255, 0.14);
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.2);
+    }
+
+    .brand-kicker {
+      display: block;
+      font-size: 10px;
+      letter-spacing: 0.16em;
+      color: rgba(255, 255, 255, 0.72);
+      margin-bottom: 2px;
+    }
+
+    #user-info {
+      flex-shrink: 0;
+      max-width: 42%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 12px;
+      font-weight: 800;
+      padding: 8px 10px;
+      border-radius: 999px;
+      color: #17352d;
+      background: rgba(255, 255, 255, 0.88);
+      box-shadow: 0 7px 18px rgba(0, 0, 0, 0.12);
+    }
+
+    .guide-card,
+    .calendar-card {
+      background: var(--surface);
+      border: 1px solid rgba(255, 255, 255, 0.72);
+      border-radius: 24px;
+      box-shadow: 0 18px 48px rgba(37, 56, 48, 0.12);
+      backdrop-filter: blur(16px);
+    }
+
+    .guide-card {
+      padding: 12px;
+      margin-bottom: 12px;
+    }
+
+    .guide-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      color: var(--brand-dark);
+      font-size: 12px;
+      font-weight: 900;
+      margin-bottom: 10px;
+      padding: 0 2px;
+    }
+
+    .legend-grid {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 6px;
+    }
+
+    .legend-item {
+      min-height: 46px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 4px;
+      border-radius: 16px;
+      font-size: 10px;
+      font-weight: 900;
+      line-height: 1.1;
+      color: #fff;
+      box-shadow: 0 8px 18px rgba(24, 48, 40, 0.12);
+    }
+
+    .legend-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.85);
+    }
+
+    .calendar-card {
+      padding: 12px 10px 14px;
+      overflow: hidden;
+    }
+
+    /* FullCalendar 全体調整 */
+    .fc {
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--ink);
+    }
+
+    .fc .fc-toolbar.fc-header-toolbar {
+      margin-bottom: 12px;
+      padding: 2px 2px 8px;
+    }
+
+    .fc .fc-toolbar-title {
+      font-size: 18px;
+      font-weight: 950;
+      letter-spacing: 0.02em;
+      color: var(--brand-dark);
+    }
+
+    .fc .fc-button-primary {
+      border: 0 !important;
+      border-radius: 999px !important;
+      background: #edf4f1 !important;
+      color: var(--brand-dark) !important;
+      box-shadow: inset 0 0 0 1px rgba(49, 95, 82, 0.12), 0 7px 16px rgba(37, 56, 48, 0.08) !important;
+      font-weight: 900 !important;
+    }
+
+    .fc .fc-button-primary:focus,
+    .fc .fc-button-primary:active {
+      box-shadow: inset 0 0 0 1px rgba(49, 95, 82, 0.22), 0 7px 16px rgba(37, 56, 48, 0.12) !important;
+    }
+
+    .fc-theme-standard .fc-scrollgrid,
+    .fc-theme-standard td,
+    .fc-theme-standard th {
+      border-color: var(--line) !important;
+    }
+
+    .fc-theme-standard .fc-scrollgrid {
+      border-radius: 18px;
+      overflow: hidden;
+      background: rgba(255, 255, 255, 0.64);
+    }
+
+    .fc .fc-col-header-cell {
+      background: rgba(237, 244, 241, 0.9);
+      padding: 5px 0;
+    }
+
+    .fc .fc-col-header-cell-cushion {
+      color: #49615a;
+      font-size: 11px;
+      font-weight: 950;
+      text-decoration: none;
+    }
+
+    .fc .fc-daygrid-day {
+      background: rgba(255, 255, 255, 0.52);
+    }
+
+    .fc .fc-daygrid-day.fc-day-today {
+      background: rgba(232, 162, 109, 0.13) !important;
+    }
+
+    .fc .fc-daygrid-day-number {
+      padding: 5px 6px 0 0;
+      font-size: 11px;
+      font-weight: 900;
+      color: #394942;
+      text-decoration: none;
+    }
+
+    .fc .fc-day-other {
+      background: rgba(244, 240, 232, 0.56);
+    }
+
+    .fc .fc-day-other .slot-block {
+      opacity: 0.42;
+    }
+
     /* カレンダーのマス全体のイベントコンテナ調整 */
-    .fc-daygrid-day-events { display: flex; flex-direction: column; gap: 6px; padding: 2px !important; }
-    
+    .fc-daygrid-day-events {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      padding: 2px 3px 5px !important;
+      min-height: 62px !important;
+    }
+
     /* 上下に「文字」と「ボタン」を並べるためのコンテナ */
-    .slot-block { display: flex; flex-direction: column; align-items: center; width: 100%; gap: 1px; }
-    
+    .slot-block {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      width: 100%;
+      gap: 2px;
+    }
+
     /* ボタンのすぐ上に表示するAM/PMテキスト */
-    .slot-label-top { font-size: 10px; font-weight: 800; color: #000000; text-align: center; line-height: 1; margin-bottom: 2px; }
-    
+    .slot-label-top {
+      font-size: 9px;
+      font-weight: 950;
+      color: #38524a;
+      text-align: center;
+      line-height: 1;
+      letter-spacing: 0.08em;
+    }
+
     /* 文字を入れる四角いボタン */
-    .slot-btn-box { width: 100%; text-align: center; padding: 4px 0; font-size: 10px; font-weight: bold; border-radius: 4px; cursor: pointer; user-select: none; transition: all 0.2s; white-space: nowrap; }
-    
-    /* カラーロジック */
-    .bg-green-slot { background-color: #22c55e; color: #ffffff; }  /* 予約可 */
-    .bg-red-slot { background-color: #ef4444; color: #ffffff; }    /* 予約済 */
-    .bg-blue-slot { background-color: #3b82f6; color: #ffffff; border: 1px solid #1d4ed8; }   /* 選択中 */
-    .bg-purple-slot { background-color: #a855f7; color: #ffffff; border: 1px solid #6b21a8; } /* 競合中 */
-    .bg-sky-slot { background-color: #38bdf8; color: #ffffff; cursor: not-allowed; } /* 確定 */
+    .slot-btn-box {
+      width: 100%;
+      text-align: center;
+      padding: 5px 0;
+      font-size: 10px;
+      font-weight: 950;
+      border-radius: 10px;
+      cursor: pointer;
+      user-select: none;
+      transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+      white-space: nowrap;
+      letter-spacing: 0.02em;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.22), 0 6px 12px rgba(37, 56, 48, 0.11);
+    }
+
+    .slot-btn-box:active {
+      transform: scale(0.96);
+      filter: brightness(0.98);
+    }
+
+    /* カラーロジック：クラス名はJSが使うため絶対維持 */
+    .bg-green-slot {
+      background: linear-gradient(135deg, #7fae92, #4f8c70) !important;
+      color: #ffffff !important;
+    }
+
+    .bg-red-slot {
+      background: linear-gradient(135deg, #d88478, #b65c55) !important;
+      color: #ffffff !important;
+    }
+
+    .bg-blue-slot {
+      background: linear-gradient(135deg, #6f9fc8, #3f75a6) !important;
+      color: #ffffff !important;
+      outline: 2px solid rgba(255, 255, 255, 0.65) !important;
+      outline-offset: -3px !important;
+    }
+
+    .bg-purple-slot {
+      background: linear-gradient(135deg, #a889c5, #7b5aa3) !important;
+      color: #ffffff !important;
+    }
+
+    .bg-sky-slot {
+      background: linear-gradient(135deg, #8fc6d6, #5fa8bd) !important;
+      color: #ffffff !important;
+      cursor: not-allowed !important;
+      opacity: 0.92 !important;
+    }
 
     /* 土日の曜日カラー変更 */
     .fc-day-sat .fc-col-header-cell-cushion,
-    .fc-day-sat .fc-daygrid-day-number { color: #2563eb !important; font-weight: bold; } /* 土曜日は青 */
+    .fc-day-sat .fc-daygrid-day-number {
+      color: #3f75a6 !important;
+      font-weight: 950;
+    }
+
     .fc-day-sun .fc-col-header-cell-cushion,
-    .fc-day-sun .fc-daygrid-day-number { color: #dc2626 !important; font-weight: bold; } /* 日曜日は赤 */
+    .fc-day-sun .fc-daygrid-day-number {
+      color: #b65c55 !important;
+      font-weight: 950;
+    }
+
+    .action-bar {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 50;
+      padding: 14px 14px calc(14px + env(safe-area-inset-bottom));
+      background: rgba(255, 253, 248, 0.92);
+      border-top: 1px solid rgba(24, 48, 40, 0.12);
+      box-shadow: 0 -18px 45px rgba(37, 56, 48, 0.13);
+      backdrop-filter: blur(18px);
+    }
+
+    .action-inner {
+      max-width: 520px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+    }
+
+    #submit-btn,
+    #close-btn {
+      width: 100%;
+      border: 0;
+      border-radius: 18px;
+      font-weight: 950;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+    }
+
+    #submit-btn {
+      padding: 14px 16px;
+      color: #fff;
+      background: linear-gradient(135deg, var(--brand), var(--brand-dark));
+      box-shadow: 0 14px 28px rgba(24, 56, 47, 0.25);
+    }
+
+    #submit-btn:disabled {
+      opacity: 0.42;
+      background: #9daaa4;
+      box-shadow: none;
+    }
+
+    #submit-btn:not(:disabled):active,
+    #close-btn:active {
+      transform: scale(0.985);
+    }
+
+    #close-btn {
+      padding: 11px 16px;
+      color: #40524b;
+      background: rgba(237, 244, 241, 0.96);
+      box-shadow: inset 0 0 0 1px rgba(49, 95, 82, 0.12);
+      font-size: 13px;
+    }
+
+    @media (max-width: 390px) {
+      .app-shell {
+        padding-left: 10px;
+        padding-right: 10px;
+      }
+
+      .legend-grid {
+        gap: 4px;
+      }
+
+      .legend-item {
+        min-height: 42px;
+        border-radius: 14px;
+        font-size: 9px;
+      }
+
+      .slot-btn-box {
+        font-size: 9px;
+        border-radius: 8px;
+      }
+
+      .fc .fc-toolbar-title {
+        font-size: 16px;
+      }
+    }
   </style>
 </head>
-<body class="bg-slate-100 font-sans min-height-screen pb-36"> <header class="bg-blue-900 text-white p-4 shadow-md sticky top-0 z-50 flex justify-between items-center">
-    <h1 class="text-xl font-bold"><i class="fa-solid fa-calendar-days mr-2"></i>シフト希望提出</h1>
-    <div id="user-info" class="text-sm bg-blue-800 px-3 py-1 rounded">読み込み中...</div>
+
+<body>
+  <header class="top-card">
+    <div class="brand-row">
+      <h1 class="brand-title">
+        <span class="brand-icon"><i class="fa-solid fa-calendar-days"></i></span>
+        <span>
+          <span class="brand-kicker">SHINTAKU WORKS</span>
+          シフト希望提出
+        </span>
+      </h1>
+      <div id="user-info">読み込み中...</div>
+    </div>
   </header>
 
-  <div class="max-w-md mx-auto m-3 p-3 bg-white rounded-lg shadow-sm grid grid-cols-5 gap-1 text-center text-xs font-bold">
-    <div class="p-1 bg-green-500 text-white rounded">緑:予約可</div>
-    <div class="p-1 bg-red-500 text-white rounded">赤:予約済</div>
-    <div class="p-1 bg-sky-400 text-white rounded">水色:確定</div>
-    <div class="p-1 bg-blue-500 text-white rounded">青:選択中</div>
-    <div class="p-1 bg-purple-500 text-white rounded">紫:競合中</div>
-  </div>
+  <main class="app-shell">
+    <section class="guide-card" aria-label="ステータス説明">
+      <div class="guide-title">
+        <span><i class="fa-solid fa-list-check"></i> ステータス</span>
+        <span>AM / PM を選択</span>
+      </div>
+      <div class="legend-grid text-center">
+        <div class="legend-item bg-green-slot"><span class="legend-dot"></span><span>予約可</span></div>
+        <div class="legend-item bg-red-slot"><span class="legend-dot"></span><span>予約済</span></div>
+        <div class="legend-item bg-sky-slot"><span class="legend-dot"></span><span>確定</span></div>
+        <div class="legend-item bg-blue-slot"><span class="legend-dot"></span><span>選択中</span></div>
+        <div class="legend-item bg-purple-slot"><span class="legend-dot"></span><span>競合中</span></div>
+      </div>
+    </section>
 
-  <div class="max-w-md mx-auto p-2 bg-white rounded-lg shadow-md m-3">
-    <div id="calendar"></div>
-  </div>
+    <section class="calendar-card">
+      <div id="calendar"></div>
+    </section>
+  </main>
 
-  <div class="fixed bottom-0 left-0 right-0 p-4 bg-white shadow-lg border-t border-slate-200 flex flex-col items-center gap-2 z-50">
-    <button id="submit-btn" class="w-full max-w-md bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-md flex justify-center items-center gap-2 transition disabled:bg-slate-400" disabled>
-      <i class="fa-solid fa-paper-plane"></i> シフトを提出する (<span id="select-count">0</span>)
-    </button>
-    <button id="close-btn" class="w-full max-w-md bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-2 rounded-xl text-sm flex justify-center items-center gap-2 transition">
-      <i class="fa-solid fa-xmark"></i> 提出せずに画面を閉じる
-    </button>
+  <div class="action-bar">
+    <div class="action-inner">
+      <button id="submit-btn" disabled>
+        <i class="fa-solid fa-paper-plane"></i> シフトを提出する (<span id="select-count">0</span>)
+      </button>
+      <button id="close-btn">
+        <i class="fa-solid fa-xmark"></i> 提出せずに画面を閉じる
+      </button>
+    </div>
   </div>
 
   <script>
@@ -141,20 +553,20 @@
             
             if (match) {
               if (match.status === '確定') {
-                btn.classList.add('bg-sky-slot');
+                btn.className = 'slot-btn-box bg-sky-slot';
                 btn.innerText = '確定';
                 btn.dataset.status = 'confirmed';
               } else if (match.status === '予約済み') {
-                btn.classList.add('bg-red-slot');
+                btn.className = 'slot-btn-box bg-red-slot';
                 btn.innerText = '予約済';
                 btn.dataset.status = 'reserved';
               } else if (match.status === '競合') {
-                btn.classList.add('bg-purple-slot');
+                btn.className = 'slot-btn-box bg-purple-slot';
                 btn.innerText = '競合中';
                 btn.dataset.status = 'conflict';
               }
             } else {
-              btn.classList.add('bg-green-slot');
+              btn.className = 'slot-btn-box bg-green-slot';
               btn.innerText = '予約可';
               btn.dataset.status = 'available';
             }
@@ -203,16 +615,14 @@
       document.getElementById('submit-btn').disabled = (count === 0);
     }
 
-    // ★★★ 【新規】画面を閉じるボタンを押したときの処理 ★★★
     document.getElementById('close-btn').addEventListener('click', function() {
       if (liff.isInClient()) {
-        liff.closeWindow(); // LINEのアプリ内ならウィンドウをピシッと閉じる
+        liff.closeWindow(); 
       } else {
         alert("PC環境のため、ブラウザのタブを直接閉じるか、前の画面に戻ってください。");
       }
     });
 
-    // 提出ボタンを押したときの処理
     document.getElementById('submit-btn').addEventListener('click', function() {
       const btn = this;
       btn.disabled = true;
