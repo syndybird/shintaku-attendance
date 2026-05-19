@@ -1,200 +1,172 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>SHINTAKU 勤怠</title>
+const SHEET_ID = '1gazIUqo_9yOfsW3PzCZt3eUht4Qo3HC71du7PEGYWuQ';
+const SHEET_NAME = '打刻ログ'; 
+const MEMBER_SHEET_NAME = '社員名簿'; 
 
-  <script
-    charset="utf-8"
-    src="https://static.line-scdn.net/liff/edge/2/sdk.js">
-  </script>
-
-  <style>
-    body { margin: 0; padding: 0; background: #f5f5f5; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-    .wrap { min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 16px; box-sizing: border-box; }
-    .card { width: 100%; max-width: 380px; background: white; border-radius: 16px; padding: 36px 24px; box-sizing: border-box; box-shadow: 0 4px 20px rgba(0,0,0,0.06); text-align: center; }
-    h1 { margin: 0 0 16px; font-size: 24px; font-weight: 700; letter-spacing: -0.5px; }
-    p { margin: 0 0 24px; color: #444; font-size: 15px; line-height: 1.7; word-break: break-all; }
-    .ok { color: #2e7d32; }
-    .error { color: #c62828; }
-    
-    .msg-line { display: block; margin-bottom: 6px; }
-    .msg-line:last-child { margin-bottom: 0; }
-    
-    /* 状況に合わせて色が変わるお知らせバー（初期状態は完全非表示） */
-    .info-bar { padding: 14px; border-radius: 10px; font-weight: bold; margin-bottom: 24px; font-size: 15px; line-height: 1.4; display: none; }
-    
-    /* 成功時の緑バー */
-    .info-bar.bg-green { display: block; background: #e8f5e9; color: #1b5e20; border: 1px solid #a5d6a7; }
-    
-    /* エラー時の赤バー */
-    .info-bar.bg-red { display: block; background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
-    
-    .close-btn { background: #dc2626; color: white; border: none; padding: 16px 24px; font-size: 16px; font-weight: bold; border-radius: 10px; cursor: pointer; width: 100%; display: none; box-shadow: 0 4px 12px rgba(220,38,38,0.15); -webkit-tap-highlight-color: transparent; }
-    .close-btn:active { background: #b91c1c; }
-  </style>
-</head>
-<body>
-
-<div class="wrap">
-  <div class="card">
-    <h1 id="status">LINEと通信中...</h1>
-    <p id="detail">しばらくお待ちください</p>
-    
-    <div id="infoBar" class="info-bar"></div>
-    
-    <button id="closeBtn" class="close-btn" onclick="liff.closeWindow()">画面を閉じる</button>
-  </div>
-</div>
-
-<script {tag: "strict_completion"}>
-  const myLiffId = "2010109211-y1fJhsUQ";
-  // ★あなたの最新のGASデプロイURLに書き換えてください！
-  const gasUrl = "https://script.google.com/macros/s/AKfycbwoGLFrW0mqbTIqzybdbynjI22DJj5Thi084NikSOKTHi1QIdJ6A6J19yfJYlTZaCpc/exec";
-
-  const status = document.getElementById("status");
-  const detail = document.getElementById("detail");
-  const infoBar = document.getElementById("infoBar");
-  const closeBtn = document.getElementById("closeBtn");
-
-  const params = new URLSearchParams(window.location.search);
-  let type = params.get("type");
-
-  if (!type) {
-    const liffState = params.get("liff.state");
-    if (liffState) {
-      const stateParams = new URLSearchParams(liffState);
-      type = stateParams.get("type");
-    }
-  }
-
-  if (type) { sessionStorage.setItem("attendanceType", type); }
-  if (!type) { type = sessionStorage.getItem("attendanceType"); }
-
-  window.onload = async function () {
-    infoBar.className = "info-bar";
-    infoBar.innerText = "";
-    infoBar.style.display = "none";
-
-    if (!type) {
-      status.innerText = "設定エラー";
-      status.className = "error";
-      detail.innerHTML = '<span class="msg-line">URLの指定（type）が</span><span class="msg-line">正しくありません。</span>';
-      closeBtn.style.display = "block";
-      return;
+function doPost(e) {
+  const lock = LockService.getScriptLock();
+  try {
+    if (!lock.tryLock(30000)) {
+      return jsonResponse({ status: 'error', message: '混雑しています。しばらく経ってから再度お試しください。' });
     }
 
-    try {
-      await liff.init({ liffId: myLiffId });
-
-      if (!liff.isLoggedIn()) {
-        status.innerText = "LINEログイン中...";
-        detail.innerText = "認証画面へ移動します。";
-        liff.login();
-        return;
-      }
-
-      const profile = await liff.getProfile();
-
-      if (type === "ユーザー登録") {
-        status.innerText = "初期メンバー登録中...";
-        detail.innerText = "LINEの情報を読み込んでいます。";
-        await submitRegistration(profile.userId, profile.displayName);
-      } else {
-        status.innerText = `${type}データ送信中...`;
-        detail.innerText = "サーバーに送信しています...";
-        await sendAttendance(profile.userId);
-      }
-
-    } catch (err) {
-      status.innerText = "システムエラー";
-      status.className = "error";
-      
-      if (err.message.includes("revoked") || err.message.includes("expired")) {
-        detail.innerHTML = '<span class="msg-line">有効期限が切れました。</span><span class="msg-line">もう一度QRコードを</span><span class="msg-line">読み直してください。</span>';
-      } else {
-        detail.innerText = err.message;
-      }
-      closeBtn.style.display = "block";
+    if (!e.postData || !e.postData.contents) {
+      return jsonResponse({ status: 'error', message: 'データが空です。' });
     }
-  };
+    
+    const params = JSON.parse(e.postData.contents);
+    const action = params.action;
+    const userId = params.userId;
 
-  // 打刻送信
-  async function sendAttendance(userId) {
-    try {
-      const response = await fetch(gasUrl, {
-        method: "POST",
-        body: JSON.stringify({ action: "attendance", userId: userId, type: type })
-      });
-      const resData = await response.json();
+    const ss = SpreadsheetApp.openById(SHEET_ID);
 
-      if (resData.status === "success") {
-        status.innerText = `${type}処理完了`;
-        status.className = "ok";
-        detail.innerHTML = '<span class="msg-line">間もなく画面が自動で閉じます。</span>';
-        
-        // ✨【変更】ださい矢印を消してシンプルに
-        infoBar.className = "info-bar bg-green";
-        infoBar.innerText = `記録日時 : ${resData.datetime}`;
-        
-        sessionStorage.removeItem("attendanceType");
-        setTimeout(() => { liff.closeWindow(); }, 2500);
-      } else {
-        status.innerText = "処理ができません";
-        status.className = "error";
-        
-        let formattedMsg = resData.message.split('。').filter(Boolean).map(msg => `<span class="msg-line">${msg}。</span>`).join('');
-        detail.innerHTML = formattedMsg;
-        
-        // 💥【変更】ださい矢印を消してシンプルに
-        if (resData.lastTime) {
-          infoBar.className = "info-bar bg-red";
-          infoBar.innerText = `直近の記録 : ${resData.lastTime}`;
-        } else {
-          infoBar.className = "info-bar";
-          infoBar.style.display = "none";
+    // ユーザー自動登録処理
+    if (action === 'register') {
+      const name = params.name;
+      if (!userId || !name) {
+        return jsonResponse({ status: 'error', message: 'ユーザーIDまたは名前が取得できませんでした。' });
+      }
+
+      let memberSheet = ss.getSheetByName(MEMBER_SHEET_NAME);
+      if (!memberSheet) {
+        memberSheet = ss.insertSheet(MEMBER_SHEET_NAME);
+        memberSheet.appendRow(['ユーザーID', '名前']);
+      }
+
+      const lastRow = memberSheet.getLastRow();
+      if (lastRow > 1) {
+        const userIds = memberSheet.getRange(2, 1, lastRow - 1, 1).getValues().flat();
+        if (userIds.includes(userId)) {
+          return jsonResponse({ status: 'error', message: 'このLINEアカウントはすでに登録されています。' });
         }
-        
-        closeBtn.style.display = "block";
       }
-    } catch (err) {
-      status.innerText = "通信エラー";
-      status.className = "error";
-      detail.innerHTML = '<span class="msg-line">打刻サーバーに</span><span class="msg-line">接続できませんでした。</span>';
-      closeBtn.style.display = "block";
-    }
-  }
 
-  // 自動ユーザー登録送信
-  async function submitRegistration(userId, displayName) {
-    try {
-      const response = await fetch(gasUrl, {
-        method: "POST",
-        body: JSON.stringify({ action: "register", userId: userId, name: displayName })
+      memberSheet.appendRow([userId, name]);
+      return jsonResponse({ status: 'success', message: 'ユーザー登録が完了しました。' });
+    }
+
+    // 通常の打刻処理
+    if (action !== 'attendance') {
+      return jsonResponse({ status: 'ok', message: '待機中' });
+    }
+
+    const type = params.type;
+
+    if (!userId || !type) {
+      return jsonResponse({ status: 'error', message: 'ユーザー情報または打刻区分が取得できませんでした。' });
+    }
+
+    // 社員名簿チェック
+    const isAllowed = checkAllowedUser(ss, userId);
+    if (!isAllowed) {
+      return jsonResponse({ 
+        status: 'error', 
+        message: 'このLINEアカウントは、勤怠システムへの利用が許可されていません。まずは【初期登録用QR】から登録してください。' 
       });
-      const resData = await response.json();
+    }
 
-      if (resData.status === "success") {
-        status.innerText = "登録完了！";
-        status.className = "ok";
-        detail.innerHTML = `<span class="msg-line">こんにちは、${displayName}さん。</span><span class="msg-line">メンバー登録が自動完了しました！</span>`;
-        sessionStorage.removeItem("attendanceType");
-        setTimeout(() => { liff.closeWindow(); }, 3000);
+    if (type !== '出勤' && type !== '退勤') {
+      return jsonResponse({ status: 'error', message: '打刻区分が不正です。' });
+    }
+
+    let sheet = ss.getSheetByName(SHEET_NAME);
+    if (!sheet) {
+      sheet = ss.insertSheet(SHEET_NAME);
+      sheet.appendRow(['日付', '時刻', 'ユーザーID', '打刻区分']);
+    }
+
+    // 打刻チェック
+    const checkResult = checkLastStatus(sheet, userId, type);
+    if (!checkResult.success) {
+      return jsonResponse({ 
+        status: 'error', 
+        message: checkResult.message,
+        lastTime: checkResult.lastTime 
+      });
+    }
+
+    const now = new Date();
+    recordAttendance(sheet, userId, type, now);
+
+    const dateTimeStr = Utilities.formatDate(now, 'Asia/Tokyo', "M'月'd'日' HH'時'mm'分'");
+
+    return jsonResponse({ status: 'success', message: type + '処理が完了しました。', datetime: dateTimeStr });
+
+  } catch (error) {
+    return jsonResponse({ status: 'error', message: 'システムエラーが発生しました: ' + error.toString() });
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function checkAllowedUser(ss, userId) {
+  const memberSheet = ss.getSheetByName(MEMBER_SHEET_NAME);
+  if (!memberSheet) return false;
+  const lastRow = memberSheet.getLastRow();
+  if (lastRow <= 1) return false; 
+  const userIds = memberSheet.getRange(2, 1, lastRow - 1, 1).getValues().flat();
+  return userIds.includes(userId);
+}
+
+function recordAttendance(sheet, userId, type, now) {
+  const date = Utilities.formatDate(now, 'Asia/Tokyo', 'yyyy/MM/dd');
+  const time = Utilities.formatDate(now, 'Asia/Tokyo', 'HH:mm:ss');
+  sheet.appendRow([date, time, userId, type]);
+}
+
+function checkLastStatus(sheet, userId, currentType) {
+  const lastRow = sheet.getLastRow();
+  if (lastRow <= 1) {
+    if (currentType === '退勤') {
+      return { success: false, message: '本日の出勤データが見つかりません。先に「出勤」のQRコードを読み込んでください。', lastTime: null };
+    }
+    return { success: true };
+  }
+
+  const data = sheet.getRange(2, 1, lastRow - 1, 4).getValues();
+  let lastType = '';
+  let lastFullDateTimeStr = '';
+
+  for (let i = data.length - 1; i >= 0; i--) {
+    if (data[i][2] === userId) {
+      lastType = data[i][3];
+      
+      const dateObj = new Date(data[i][0]);
+      const timeObj = new Date(data[i][1]);
+      
+      let monthDay = "";
+      let hourMin = "";
+      
+      if (!isNaN(dateObj.getTime())) {
+        monthDay = Utilities.formatDate(dateObj, 'Asia/Tokyo', "M'月'd'日'");
       } else {
-        status.innerText = "登録の確認";
-        status.className = "error";
-        detail.innerText = resData.message;
-        closeBtn.style.display = "block";
+        const s = data[i][0].toString();
+        monthDay = s.includes('/') ? `${s.split('/')[1]}月${s.split('/')[2]}日` : s;
       }
-    } catch (err) {
-      status.innerText = "通信エラー";
-      status.className = "error";
-      detail.innerHTML = '<span class="msg-line">登録サーバーに</span><span class="msg-line">接続できませんでした。</span>';
-      closeBtn.style.display = "block";
+      
+      if (!isNaN(timeObj.getTime())) {
+        hourMin = Utilities.formatDate(timeObj, 'Asia/Tokyo', 'HH:mm');
+      } else {
+        hourMin = data[i][1].toString().substring(0, 5);
+      }
+      
+      lastFullDateTimeStr = `${monthDay} ${hourMin}`;
+      break;
     }
   }
-</script>
 
-</body>
-</html>
+  if (currentType === '退勤' && lastType === '') {
+    return { success: false, message: '本日の出勤データが見つかりません。先に「出勤」のQRコードを読み込んでください。', lastTime: null };
+  }
+  if (currentType === '出勤' && lastType === '出勤') {
+    return { success: false, message: 'すでに本日分の出勤処理は完了しています。連続しての出勤処理はできません。', lastTime: lastFullDateTimeStr };
+  }
+  if (currentType === '退勤' && lastType === '退勤') {
+    return { success: false, message: 'すでに本日分の退勤処理は完了しています。連続しての退勤処理はできません。', lastTime: lastFullDateTimeStr };
+  }
+
+  return { success: true };
+}
+
+function jsonResponse(data) {
+  return ContentService.createTextOutput(JSON.stringify(data)).setMimeType(ContentService.MimeType.JSON);
+}
