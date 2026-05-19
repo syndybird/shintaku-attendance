@@ -9,34 +9,22 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <style>
-    /* カレンダーのマス全体のイベントコンテナ調整 */
     .fc-daygrid-day-events { display: flex; flex-direction: column; gap: 6px; padding: 2px !important; }
-
-    /* 上下に「文字」と「ボタン」を並べるためのコンテナ */
     .slot-block { display: flex; flex-direction: column; align-items: center; width: 100%; gap: 1px; }
-
-    /* ボタンのすぐ上に表示するAM/PMテキスト */
     .slot-label-top { font-size: 10px; font-weight: 800; color: #000000; text-align: center; line-height: 1; margin-bottom: 2px; }
-
-    /* 文字を入れる四角いボタン */
     .slot-btn-box { width: 100%; text-align: center; padding: 4px 0; font-size: 10px; font-weight: bold; border-radius: 4px; cursor: pointer; user-select: none; transition: all 0.2s; white-space: nowrap; }
 
     /* カラーロジック */
-    .bg-green-slot { background-color: #22c55e; color: #ffffff; }  /* 予約可 */
-    .bg-red-slot { background-color: #ef4444; color: #ffffff; cursor: not-allowed; }    /* 予約済（他人の確定・直近ブロック） */
-    .bg-blue-slot { background-color: #3b82f6; color: #ffffff; border: 1px solid #1d4ed8; }   /* 選択中（本人の募集枠） */
-    .bg-purple-slot { background-color: #a855f7; color: #ffffff; cursor: not-allowed; } /* 他人の予約（動かせない紫） */
-    .bg-sky-slot { background-color: #38bdf8; color: #ffffff; } /* 確定（本人の確定） */
-    .bg-yellow-slot { background-color: #eab308; color: #ffffff; border: 1px solid #a16207; } /* 変更申請（直近7日の黄色） */
-
-    /* 過去の枠・未来の期間外のボタンデザイン */
+    .bg-green-slot { background-color: #22c55e; color: #ffffff; }  
+    .bg-red-slot { background-color: #ef4444; color: #ffffff; cursor: not-allowed; }    
+    .bg-blue-slot { background-color: #3b82f6; color: #ffffff; border: 1px solid #1d4ed8; }   
+    .bg-purple-slot { background-color: #a855f7; color: #ffffff; cursor: not-allowed; } 
+    .bg-sky-slot { background-color: #38bdf8; color: #ffffff; } 
+    .bg-yellow-slot { background-color: #eab308; color: #ffffff; border: 1px solid #a16207; } 
     .bg-past-slot { background-color: #cbd5e1 !important; color: #64748b !important; border: none !important; cursor: not-allowed !important; opacity: 0.6; }
 
-    /* 土日の曜日カラー変更 */
-    .fc-day-sat .fc-col-header-cell-cushion,
-    .fc-day-sat .fc-daygrid-day-number { color: #2563eb !important; font-weight: bold; } 
-    .fc-day-sun .fc-col-header-cell-cushion,
-    .fc-day-sun .fc-daygrid-day-number { color: #dc2626 !important; font-weight: bold; } 
+    .fc-day-sat .fc-col-header-cell-cushion, .fc-day-sat .fc-daygrid-day-number { color: #2563eb !important; font-weight: bold; } 
+    .fc-day-sun .fc-col-header-cell-cushion, .fc-day-sun .fc-daygrid-day-number { color: #dc2626 !important; font-weight: bold; } 
   </style>
 </head>
 <body class="bg-slate-100 font-sans min-height-screen pb-36">
@@ -76,10 +64,10 @@
     const RECRUIT_DAYS = 14;   
 
     let userName = "テストユーザー"; 
+    let userId = "TEST_USER_ID"; // ★PCテスト用のダミーID（シートのF列にこれを書けばPCでも検証可能）
     let currentSheetData = []; 
     let selectedSlots = {};   
 
-    // LIFF初期化
     document.addEventListener("DOMContentLoaded", function() {
       liff.init({ liffId: LIFF_ID })
         .then(() => {
@@ -92,6 +80,7 @@
             } else {
               liff.getProfile().then(profile => {
                 userName = profile.displayName.trim(); 
+                userId = profile.userId; // ★LINEの固有ユーザーIDを100%確実に取得
                 document.getElementById("user-info").innerText = "👤 " + userName;
                 initSystem();
               });
@@ -165,22 +154,12 @@
             const match = currentSheetData.find(d => d.date === dateStr && d.slot === slot);
             
             const sheetStatus = match && match.status ? String(match.status).trim() : "";
-            const sheetName = match && match.name ? String(match.name).trim() : "";
-            const currentLoginName = userName ? String(userName).trim() : "";
+            const sheetUid = match && match.userId ? String(match.userId).trim() : "";
 
-            // 🌟【鉄壁の表記ゆれ対応】お互いの名前を削り、部分一致が含まれていれば本人とみなす！
-            let isMyName = false;
-            if (sheetName && currentLoginName) {
-              // ニックネームの「やましん」部分、または氏名の「山口」などで部分一致すれば100%本人判定
-              if (sheetName.includes(currentLoginName) || currentLoginName.includes(sheetName) || sheetName.slice(0,4) === currentLoginName.slice(0,4)) {
-                isMyName = true;
-              }
-            }
+            // 🌟【最強の判定式】LINEのユーザーID同士が完全に一致するかどうかだけで判定！
+            const isMyName = (sheetUid !== "" && sheetUid === userId);
 
             if (isPast) {
-              // -----------------------------------------
-              // 【過去】実績エリア
-              // -----------------------------------------
               if (sheetStatus === '確定' && isMyName) {
                 btn.classList.add('bg-sky-slot');
                 btn.innerText = '確定';
@@ -192,24 +171,17 @@
               }
 
             } else if (isTooFuture) {
-              // -----------------------------------------
-              // 【期間外】フライング防止
-              // -----------------------------------------
               btn.classList.add('bg-past-slot');
               btn.innerText = '期間外';
               btn.dataset.status = 'future_lock';
 
             } else if (isFixedPeriod) {
-              // -----------------------------------------
-              // 【直近7日間エリア】確定後の変更申請対応
-              // -----------------------------------------
               if (match) {
                 if (sheetStatus === '確定' && isMyName) {
                   btn.classList.add('bg-sky-slot');
                   btn.innerText = '確定';
                   btn.dataset.status = 'my_fixed_urgent';
                 } else if (sheetStatus === '変更申請中' && isMyName) {
-                  // すでに変更申請を出している場合は初期表示を「黄色」にする
                   btn.classList.add('bg-yellow-slot');
                   btn.innerText = '変更申請';
                   btn.dataset.status = 'my_fixed_urgent_active';
@@ -226,9 +198,6 @@
               }
 
             } else {
-              // -----------------------------------------
-              // 【7日〜21日後：通常募集エリア】
-              // -----------------------------------------
               if (match) {
                 if (sheetStatus === '確定') {
                   if (isMyName) {
@@ -331,6 +300,7 @@
 
       const payload = {
         userName: userName,
+        userId: userId, // ★送信データにユーザーIDを追加
         selections: Object.values(selectedSlots)
       };
 
@@ -341,7 +311,7 @@
       .then(res => res.json())
       .then(result => {
         if (result.result === "success") {
-          alert("シフト希望を提出しました！先着判定の上、シートに記録されました。");
+          alert("シフト希望を提出しました！");
           selectedSlots = {};
           initSystem(); 
         } else {
