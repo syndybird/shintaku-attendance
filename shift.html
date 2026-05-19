@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SHINTAKU WORKS シフト予約</title>
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <style>
+    /* AM/PM 2分割のためのカスタムスタイル */
+    .fc-daygrid-day-events { display: flex; flex-direction: column; gap: 4px; padding: 4px !important; }
+    .slot-btn { text-align: center; padding: 6px 4px; font-size: 12px; font-weight: bold; border-radius: 4px; cursor: pointer; user-select: none; transition: all 0.2s; }
+    /* カラーロジック */
+    .bg-green-slot { background-color: #22c55e; color: white; } /* 空き */
+    .bg-red-slot { background-color: #ef4444; color: white; }   /* 予約済 */
+    .bg-blue-slot { background-color: #3b82f6; color: white; border: 2px solid #1d4ed8; }  /* 選択中 */
+    .bg-purple-slot { background-color: #a855f7; color: white; border: 2px solid #6b21a8; } /* 競合 */
+  </style>
+</head>
+<body class="bg-slate-100 font-sans min-height-screen pb-24">
+
+  <header class="bg-blue-900 text-white p-4 shadow-md sticky top-0 z-50 flex justify-between items-center">
+    <h1 class="text-xl font-bold"><i class="fa-solid fa-calendar-days mr-2"></i>シフト希望提出</h1>
+    <div id="user-info" class="text-sm bg-blue-800 px-3 py-1 rounded">読み込み中...</div>
+  </header>
+
+  <div class="max-w-md mx-auto m-3 p-3 bg-white rounded-lg shadow-sm grid grid-cols-4 gap-2 text-center text-xs font-bold">
+    <div class="p-1 bg-green-500 text-white rounded">緑：空き</div>
+    <div class="p-1 bg-red-500 text-white rounded">赤：既約</div>
+    <div class="p-1 bg-blue-500 text-white rounded">青：選択</div>
+    <div class="p-1 bg-purple-500 text-white rounded">紫：競合</div>
+  </div>
+
+  <div class="max-w-md mx-auto p-2 bg-white rounded-lg shadow-md m-3">
+    <div id="calendar"></div>
+  </div>
+
+  <div class="fixed bottom-0 left-0 right-0 p-4 bg-white shadow-lg border-t border-slate-200 flex justify-center z-50">
+    <button id="submit-btn" class="w-full max-w-md bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-md flex justify-center items-center gap-2 transition disabled:bg-slate-400" disabled>
+      <i class="fa-solid fa-paper-plane"></i> シフトを提出する (<span id="select-count">0</span>)
+    </button>
+  </div>
+
+  <script>
+    // デプロイ済みのGASウェブアプリURL（書き換え済み）
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbyOmKVAR3pmTx7IKIxx4p2_rHqenCFoh2VaAUds3cDneaBG6YXfzIr8fURFVfJ4IHCs/exec";
+    
+    let userName = "テストユーザー"; 
+    let currentSheetData = []; // サーバーから取得した最新状態
+    let selectedSlots = {};   // ユーザーが今ポチポチ選んだ枠情報
+
+    // LIFF初期化
+    document.addEventListener("DOMContentLoaded", function() {
+      // 本番用LIFF ID（既存のものを流用）
+      liff.init({ liffId: "2010136950-uGfcZEcw" })
+        .then(() => {
+          if (!liff.isLoggedIn()) {
+            liff.login();
+          } else {
+            liff.getProfile().then(profile => {
+              userName = profile.displayName;
+              document.getElementById("user-info").innerText = "👤 " + userName;
+              initSystem();
+            });
+          }
+        }).catch(err => {
+          console.log("LIFF初期化失敗、テストモードで起動");
+          document.getElementById("user-info").innerText = "⚠️ テストモード";
+          initSystem();
+        });
+    });
+
+    // システム起動・カレンダー描画
+    function initSystem() {
+      // GASから現在のシフト埋まり状況を読み込む（GETパラメータでアクションを指定）
+      fetch(`${GAS_URL}?action=getShift`)
+        .then(res => res.json())
+        .then(data => {
+          currentSheetData = data;
+          renderCalendar();
+        }).catch(err => {
+          alert("データ通信に失敗しました。電波の良い場所で再開してください。");
+          renderCalendar(); // 失敗しても空でカレンダーは出す
+        });
+    }
+
+    function renderCalendar() {
+      const calendarEl = document.getElementById('calendar');
+      const calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        locale: 'ja',
+        headerToolbar: { left: 'prev', center: 'title', right: 'next' },
+        height: 'auto',
+        dayCellContent: function(e) { return e.dayNumberText.replace('日', ''); }, // 「日」の表示を消してすっきり
+        
+        // 各日付のマスが描画されるときの処理（ここにAM/PMボタンをねじ込む）
+        dayCellDidMount: function(info) {
+          const dateStr = info.date.toISOString().split('T')[0];
+          const eventsContainer = info.el.querySelector('.fc-daygrid-day-events');
+          if (!eventsContainer) return;
+          eventsContainer.innerHTML = ''; // 初期化
+
+          // AMとPMの2つのスロットボタンを生成
+          ['AM', 'PM'].forEach(slot => {
+            const btn = document.createElement('div');
+            btn.className = 'slot-btn';
+            
+            // 現在のシートにあるこの日・この枠の状態を探す
+            const match = currentSheetData.find(d => d.date === dateStr && d.slot === slot);
+            
+            if (match) {
+              if (match.status === '予約済み') {
+                btn.classList.add('bg-red-slot');
+                btn.innerText = `${slot}:${match.user}`;
+                btn.dataset.status = 'reserved';
+              } else if (match.status === '競合') {
+                btn.classList.add('bg-purple-slot');
+                btn.innerText = `${slot}:競合中`;
+                btn.dataset.status = 'conflict';
+              }
+            } else {
+              // データがなければ「空き枠（緑）」
+              btn.classList.add('bg-green-slot');
+              btn.innerText = `${slot} 空き`;
+              btn.dataset.status = 'available';
+            }
+
+            // ポチポチクリックしたときのカラー変更ロジック
+            btn.addEventListener('click', function(e) {
+              e.stopPropagation();
+              const key = `${dateStr}_${slot}`;
+
+              if (btn.dataset.status === 'available') {
