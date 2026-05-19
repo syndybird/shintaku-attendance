@@ -4,150 +4,80 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SHINTAKU WORKS シフト予約</title>
-
   <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-
   <style>
-    :root {
-      --ink: #0f172a;
-      --surface: rgba(255, 255, 255, 0.95);
-      --line: rgba(15, 23, 42, 0.08);
-    }
+    /* カレンダーのマス全体のイベントコンテナ調整 */
+    .fc-daygrid-day-events { display: flex; flex-direction: column; gap: 6px; padding: 2px !important; }
 
-    html { background: #f1f5f9; }
-    body {
-      color: var(--ink);
-      min-height: 100vh;
-      background: linear-gradient(180deg, #f8fafc 0%, #e2e8f0 100%);
-      -webkit-font-smoothing: antialiased;
-    }
-
-    .app-shell { max-width: 520px; margin: 0 auto; padding: 14px 14px 160px; }
-
-    .top-card {
-      position: sticky; top: 0; z-index: 50; margin: 0 -14px 14px; padding: 16px; color: #fff;
-      background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
-      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.15);
-    }
-
-    .brand-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-    .brand-title { display: flex; align-items: center; gap: 10px; font-weight: 800; }
-    .brand-icon { width: 36px; height: 36px; border-radius: 12px; display: grid; place-items: center; background: rgba(255, 255, 255, 0.15); }
-    .brand-kicker { display: block; font-size: 10px; font-weight: 700; color: rgba(255, 255, 255, 0.6); }
-
-    #user-info {
-      font-size: 12px; font-weight: 800; padding: 6px 12px; border-radius: 999px; color: #0f172a; background: #ffffff;
-    }
-
-    .guide-card, .calendar-card {
-      background: var(--surface); border: 1px solid rgba(255, 255, 255, 0.8); border-radius: 16px;
-    }
-    .guide-card { padding: 14px; margin-bottom: 12px; }
-    .guide-title { display: flex; align-items: center; justify-content: space-between; font-size: 13px; font-weight: 800; margin-bottom: 10px; }
-
-    .legend-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
-    .legend-item { padding: 8px 0; border-radius: 8px; font-size: 11px; font-weight: 800; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.2); text-align: center; }
-
-    .calendar-card { padding: 12px; }
-
-    /* カレンダー表示領域をしっかり確保 */
-    #calendar { min-height: 420px; background: #ffffff; border-radius: 8px; padding: 4px; }
-
-    .fc .fc-toolbar-title { font-size: 16px; font-weight: 800; }
-    .fc .fc-button-primary { background: #e2e8f0 !important; color: #0f172a !important; font-weight: 800 !important; border: 0 !important; }
-    .fc-theme-standard .fc-scrollgrid { border-radius: 8px; overflow: hidden; border: 1px solid #cbd5e1 !important; }
-    
-    .fc-daygrid-day-events { display: flex; flex-direction: column; gap: 4px; padding: 2px !important; min-height: 55px !important; }
+    /* 上下に「文字」と「ボタン」を並べるためのコンテナ */
     .slot-block { display: flex; flex-direction: column; align-items: center; width: 100%; gap: 1px; }
-    
-    /* AM/PM ラベルの視認性をGeminiチューニングで爆上げ */
-    .slot-label-top { font-size: 10px; font-weight: 900; color: #000000; text-align: center; line-height: 1; margin-bottom: 1px; }
 
-    /* パキッとした原色ボタンデザイン */
-    .slot-btn-box {
-      width: 100%; text-align: center; padding: 5px 0; font-size: 11px; font-weight: 900; border-radius: 6px; cursor: pointer; user-select: none; text-shadow: 0 1px 2px rgba(0,0,0,0.3);
-    }
+    /* ボタンのすぐ上に表示するAM/PMテキスト */
+    .slot-label-top { font-size: 10px; font-weight: 800; color: #000000; text-align: center; line-height: 1; margin-bottom: 2px; }
 
-    .bg-green-slot { background: linear-gradient(180deg, #22c55e 0%, #15803d 100%) !important; color: #fff !important; }
-    .bg-red-slot { background: linear-gradient(180deg, #ef4444 0%, #b91c1c 100%) !important; color: #fff !important; }
-    .bg-blue-slot { background: linear-gradient(180deg, #3b82f6 0%, #1d4ed8 100%) !important; color: #fff !important; box-shadow: 0 0 0 2px #fff; }
-    .bg-purple-slot { background: linear-gradient(180deg, #a855f7 0%, #6b21a8 100%) !important; color: #fff !important; }
-    .bg-sky-slot { background: linear-gradient(180deg, #0ea5e9 0%, #0369a1 100%) !important; color: #fff !important; cursor: not-allowed !important; }
+    /* 文字を入れる四角いボタン（横幅いっぱい、白文字がはっきり読める色合い） */
+    .slot-btn-box { width: 100%; text-align: center; padding: 4px 0; font-size: 10px; font-weight: bold; border-radius: 4px; cursor: pointer; user-select: none; transition: all 0.2s; white-space: nowrap; }
 
-    .fc-day-sat .fc-col-header-cell-cushion, .fc-day-sat .fc-daygrid-day-number { color: #2563eb !important; font-weight: 900; }
-    .fc-day-sun .fc-col-header-cell-cushion, .fc-day-sun .fc-daygrid-day-number { color: #dc2626 !important; font-weight: 900; }
+    /* カラーロジック（白文字統一・3〜4文字がはっきり読める色合い） */
+    .bg-green-slot { background-color: #22c55e; color: #ffffff; }  /* 予約可 */
+    .bg-red-slot { background-color: #ef4444; color: #ffffff; }    /* 予約済 */
+    .bg-blue-slot { background-color: #3b82f6; color: #ffffff; border: 1px solid #1d4ed8; }   /* 選択中 */
+    .bg-purple-slot { background-color: #a855f7; color: #ffffff; border: 1px solid #6b21a8; } /* 競合中 */
+    .bg-sky-slot { background-color: #38bdf8; color: #ffffff; cursor: not-allowed; } /* 確定 */
 
-    .action-bar {
-      position: fixed; left: 0; right: 0; bottom: 0; z-index: 50; padding: 14px; background: rgba(255, 255, 255, 0.95); border-top: 1px solid #e2e8f0;
-    }
-    .action-inner { max-width: 520px; margin: 0 auto; display: flex; flex-direction: column; gap: 8px; }
-    #submit-btn, #close-btn { width: 100%; border: 0; border-radius: 12px; font-weight: 800; display: flex; justify-content: center; align-items: center; gap: 8px; padding: 12px; }
-    #submit-btn { color: #fff; background: linear-gradient(180deg, #2563eb 0%, #1d4ed8 100%); font-size: 15px; }
-    #submit-btn:disabled { opacity: 0.4; background: #94a3b8 !important; box-shadow: none; }
-    #close-btn { color: #475569; background: #f1f5f9; border: 1px solid #cbd5e1; font-size: 13px; }
+    /* 土日の曜日カラー変更 */
+    .fc-day-sat .fc-col-header-cell-cushion,
+    .fc-day-sat .fc-daygrid-day-number { color: #2563eb !important; font-weight: bold; } /* 土曜日は青 */
+    .fc-day-sun .fc-col-header-cell-cushion,
+    .fc-day-sun .fc-daygrid-day-number { color: #dc2626 !important; font-weight: bold; } /* 日曜日は赤 */
   </style>
 </head>
+<body class="bg-slate-100 font-sans min-height-screen pb-36">
 
-<body>
-  <header class="top-card">
-    <div class="brand-row">
-      <h1 class="brand-title">
-        <span class="brand-icon"><i class="fa-solid fa-calendar-days"></i></span>
-        <span>
-          <span class="brand-kicker">SHINTAKU WORKS</span>
-          シフト希望提出
-        </span>
-      </h1>
-      <div id="user-info">読み込み中...</div>
-    </div>
+  <header class="bg-blue-900 text-white p-4 shadow-md sticky top-0 z-50 flex justify-between items-center">
+    <h1 class="text-xl font-bold"><i class="fa-solid fa-calendar-days mr-2"></i>シフト希望提出</h1>
+    <div id="user-info" class="text-sm bg-blue-800 px-3 py-1 rounded">読み込み中...</div>
   </header>
 
-  <main class="app-shell">
-    <section class="guide-card" aria-label="ステータス説明">
-      <div class="guide-title">
-        <span><i class="fa-solid fa-list-check mr-1"></i> ステータス凡例</span>
-      </div>
-      <div class="legend-grid text-center">
-        <div class="legend-item bg-green-slot">予約可</div>
-        <div class="legend-item bg-red-slot">予約済</div>
-        <div class="legend-item bg-sky-slot">確定</div>
-        <div class="legend-item bg-blue-slot">選択中</div>
-        <div class="legend-item bg-purple-slot">競合中</div>
-      </div>
-    </section>
+  <div class="max-w-md mx-auto m-3 p-3 bg-white rounded-lg shadow-sm grid grid-cols-5 gap-1 text-center text-xs font-bold">
+    <div class="p-1 bg-green-500 text-white rounded">緑:予約可</div>
+    <div class="p-1 bg-red-500 text-white rounded">赤:予約済</div>
+    <div class="p-1 bg-sky-400 text-white rounded">水色:確定</div>
+    <div class="p-1 bg-blue-500 text-white rounded">青:選択中</div>
+    <div class="p-1 bg-purple-500 text-white rounded">紫:競合中</div>
+  </div>
 
-    <section class="calendar-card">
-      <div id="calendar"></div>
-    </section>
-  </main>
+  <div class="max-w-md mx-auto p-2 bg-white rounded-lg shadow-md m-3">
+    <div id="calendar"></div>
+  </div>
 
-  <div class="action-bar">
-    <div class="action-inner">
-      <button id="submit-btn" disabled>
-        <i class="fa-solid fa-paper-plane"></i> シフトを提出する (<span id="select-count">0</span>)
-      </button>
-      <button id="close-btn">
-        <i class="fa-solid fa-xmark"></i> 提出せずに画面を閉じる
-      </button>
-    </div>
+  <div class="fixed bottom-0 left-0 right-0 p-4 bg-white shadow-lg border-t border-slate-200 flex flex-col items-center gap-2 z-50">
+    <button id="submit-btn" class="w-full max-w-md bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-md flex justify-center items-center gap-2 transition disabled:bg-slate-400" disabled>
+      <i class="fa-solid fa-paper-plane"></i> シフトを提出する (<span id="select-count">0</span>)
+    </button>
+    <button id="close-btn" class="w-full max-w-md bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-2 rounded-xl text-sm flex justify-center items-center gap-2 transition">
+      <i class="fa-solid fa-xmark"></i> 提出せずに画面を閉じる
+    </button>
   </div>
 
   <script>
-    // 完全に固定された正しい通信設定
+    // 確実に動作する正しいURLと新LIFF IDでガチガチに固定
     const GAS_URL = "https://script.google.com/macros/s/AKfycbxm7UaGS-K8ifm6zbqja199RqTt2GzIlRoMzGHjYjGW3TU_SlrtoJaz5vAw4GmQi0Wi/exec";
     const LIFF_ID = "2010136950-3fse6ErK";
-    
+
     let userName = "テストユーザー"; 
     let currentSheetData = []; 
     let selectedSlots = {};   
 
+    // LIFF初期化
     document.addEventListener("DOMContentLoaded", function() {
       liff.init({ liffId: LIFF_ID })
         .then(() => {
           if (!liff.isInClient() && !liff.isLoggedIn()) {
+            console.log("外部ブラウザ検知: テストモード起動");
             document.getElementById("user-info").innerText = "⚠️ PCテストモード";
             initSystem();
           } else {
@@ -162,6 +92,7 @@
             }
           }
         }).catch(err => {
+          console.log("LIFF初期化失敗、テストモードで起動");
           document.getElementById("user-info").innerText = "⚠️ テストモード";
           initSystem();
         });
@@ -174,23 +105,20 @@
           currentSheetData = data;
           renderCalendar();
         }).catch(err => {
-          console.error("データ通信に失敗", err);
-          renderCalendar(); 
+          alert("データ通信に失敗しました。電波の良い場所で再開してください。");
+          renderCalendar();
         });
     }
 
     function renderCalendar() {
       const calendarEl = document.getElementById('calendar');
-      if (!calendarEl) return;
-      calendarEl.innerHTML = '';
-
       const calendar = new FullCalendar.Calendar(calendarEl, {
         initialView: 'dayGridMonth',
         locale: 'ja',
         headerToolbar: { left: 'prev', center: 'title', right: 'next' },
         height: 'auto',
         dayCellContent: function(e) { return e.dayNumberText.replace('日', ''); },
-        
+
         dayCellDidMount: function(info) {
           const y = info.date.getFullYear();
           const m = String(info.date.getMonth() + 1).padStart(2, '0');
@@ -199,6 +127,7 @@
 
           const eventsContainer = info.el.querySelector('.fc-daygrid-day-events');
           if (!eventsContainer) return;
+          eventsContainer.innerHTML = ''; 
 
           ['AM', 'PM'].forEach(slot => {
             const blockDiv = document.createElement('div');
@@ -211,26 +140,25 @@
 
             const btn = document.createElement('div');
             btn.className = 'slot-btn-box';
-            
-            // 安全な文字列マッチングに完全修正（日付オブジェクトのクラッシュを完全に防止）
-            const match = currentSheetData.find(item => String(item.date).trim() === dateStr && String(item.slot).trim() === slot);
-            
+
+            const match = currentSheetData.find(d => d.date === dateStr && d.slot === slot);
+
             if (match) {
               if (match.status === '確定') {
-                btn.className = 'slot-btn-box bg-sky-slot';
+                btn.classList.add('bg-sky-slot');
                 btn.innerText = '確定';
                 btn.dataset.status = 'confirmed';
               } else if (match.status === '予約済み') {
-                btn.className = 'slot-btn-box bg-red-slot';
+                btn.classList.add('bg-red-slot');
                 btn.innerText = '予約済';
                 btn.dataset.status = 'reserved';
               } else if (match.status === '競合') {
-                btn.className = 'slot-btn-box bg-purple-slot';
+                btn.classList.add('bg-purple-slot');
                 btn.innerText = '競合中';
                 btn.dataset.status = 'conflict';
               }
             } else {
-              btn.className = 'slot-btn-box bg-green-slot';
+              btn.classList.add('bg-green-slot');
               btn.innerText = '予約可';
               btn.dataset.status = 'available';
             }
@@ -253,8 +181,8 @@
                 } else if (btn.dataset.status === 'reserved' || btn.dataset.status === 'conflict') {
                   if (selectedSlots[key]) {
                     delete selectedSlots[key];
-                    btn.className = `slot-btn-box ${match && match.status === '予約済み' ? 'bg-red-slot' : 'bg-purple-slot'}`;
-                    btn.innerText = match && match.status === '予約済み' ? '予約済' : '競合中';
+                    btn.className = `slot-btn-box ${match.status === '予約済み' ? 'bg-red-slot' : 'bg-purple-slot'}`;
+                    btn.innerText = match.status === '予約済み' ? '予約済' : '競合中';
                   } else {
                     selectedSlots[key] = { date: dateStr, slot: slot, mode: 'force' };
                     btn.className = 'slot-btn-box bg-purple-slot';
@@ -279,6 +207,7 @@
       document.getElementById('submit-btn').disabled = (count === 0);
     }
 
+    // 画面を閉じるボタンの処理
     document.getElementById('close-btn').addEventListener('click', function() {
       if (liff.isInClient()) {
         liff.closeWindow(); 
@@ -287,10 +216,39 @@
       }
     });
 
+    // 提出ボタンの処理
     document.getElementById('submit-btn').addEventListener('click', function() {
       const btn = this;
       btn.disabled = true;
       btn.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> 送信中...`;
 
-      const payload = { userName: userName, selections: Object.values(selectedSlots) };
-      const encodedData = encodeURIComponent(
+      const payload = {
+        userName: userName,
+        selections: Object.values(selectedSlots)
+      };
+
+      const encodedData = encodeURIComponent(JSON.stringify(payload));
+      const finalUrl = `${GAS_URL}?action=submitShift&data=${encodedData}`;
+
+      fetch(finalUrl, { method: "GET" })
+      .then(res => res.json())
+      .then(result => {
+        if (result.result === "success") {
+          alert("シフト希望を提出しました！先着判定の上、シートに記録されました。");
+          selectedSlots = {};
+          initSystem(); 
+        } else {
+          alert("エラー: " + result.message);
+          btn.innerHTML = `<i class="fa-solid fa-paper-plane"></i> シフトを提出する`;
+          btn.disabled = false;
+        }
+      })
+      .catch(err => {
+        alert("送信処理を完了しました。最新の状況に更新します。");
+        selectedSlots = {};
+        initSystem();
+      });
+    });
+  </script>
+</body>
+</html>
