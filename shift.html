@@ -21,7 +21,7 @@
     /* 文字を入れる四角いボタン */
     .slot-btn-box { width: 100%; text-align: center; padding: 4px 0; font-size: 10px; font-weight: bold; border-radius: 4px; cursor: pointer; user-select: none; transition: all 0.2s; white-space: nowrap; }
 
-    /* カラーロジック（指定通りの配色に完全最適化） */
+    /* カラーロジック */
     .bg-green-slot { background-color: #22c55e; color: #ffffff; }  /* 予約可 */
     .bg-red-slot { background-color: #ef4444; color: #ffffff; cursor: not-allowed; }    /* 予約済（他人の確定・直近ブロック） */
     .bg-blue-slot { background-color: #3b82f6; color: #ffffff; border: 1px solid #1d4ed8; }   /* 選択中（本人の募集枠） */
@@ -46,7 +46,7 @@
     <div id="user-info" class="text-sm bg-blue-800 px-3 py-1 rounded">読み込み中...</div>
   </header>
 
-  <div class="max-w-md mx-auto m-3 p-3 bg-white rounded-lg shadow-sm grid grid-cols-6 gap-1 text-center text-[10px] font-bold利">
+  <div class="max-w-md mx-auto m-3 p-3 bg-white rounded-lg shadow-sm grid grid-cols-6 gap-1 text-center text-[10px] font-bold">
     <div class="p-1 bg-green-500 text-white rounded">緑:予約可</div>
     <div class="p-1 bg-blue-500 text-white rounded">青:本人予約</div>
     <div class="p-1 bg-purple-500 text-white rounded">紫:他人予約</div>
@@ -119,11 +119,9 @@
       const today = new Date();
       today.setHours(0, 0, 0, 0);
 
-      // 直近7日間の終了ライン
       const endOfFixedDate = new Date(today);
       endOfFixedDate.setDate(endOfFixedDate.getDate() + FIXED_DAYS);
 
-      // 募集期間（21日後）の終了ライン
       const endOfRecruitDate = new Date(today);
       endOfRecruitDate.setDate(endOfRecruitDate.getDate() + FIXED_DAYS + RECRUIT_DAYS);
 
@@ -145,7 +143,7 @@
           cellDate.setHours(0, 0, 0, 0);
 
           const isPast = cellDate < today;
-          const isFixedPeriod = cellDate >= today && cellDate <= endOfFixedDate; // 直近7日間判定
+          const isFixedPeriod = cellDate >= today && cellDate <= endOfFixedDate; 
           const isTooFuture = cellDate > endOfRecruitDate;
 
           const eventsContainer = info.el.querySelector('.fc-daygrid-day-events');
@@ -170,7 +168,14 @@
             const sheetName = match && match.name ? String(match.name).trim() : "";
             const currentLoginName = userName ? String(userName).trim() : "";
 
-            const isMyName = sheetName === currentLoginName;
+            // 🌟【鉄壁の表記ゆれ対応】お互いの名前を削り、部分一致が含まれていれば本人とみなす！
+            let isMyName = false;
+            if (sheetName && currentLoginName) {
+              // ニックネームの「やましん」部分、または氏名の「山口」などで部分一致すれば100%本人判定
+              if (sheetName.includes(currentLoginName) || currentLoginName.includes(sheetName) || sheetName.slice(0,4) === currentLoginName.slice(0,4)) {
+                isMyName = true;
+              }
+            }
 
             if (isPast) {
               // -----------------------------------------
@@ -196,22 +201,25 @@
 
             } else if (isFixedPeriod) {
               // -----------------------------------------
-              // 🌟【直近7日間エリア】確定後の変更申請対応
+              // 【直近7日間エリア】確定後の変更申請対応
               // -----------------------------------------
               if (match) {
                 if (sheetStatus === '確定' && isMyName) {
-                  // 本人の確定 ➔ 初期表示は水色。タップで黄色（変更申請）に切り替え可能！
                   btn.classList.add('bg-sky-slot');
                   btn.innerText = '確定';
                   btn.dataset.status = 'my_fixed_urgent';
+                } else if (sheetStatus === '変更申請中' && isMyName) {
+                  // すでに変更申請を出している場合は初期表示を「黄色」にする
+                  btn.classList.add('bg-yellow-slot');
+                  btn.innerText = '変更申請';
+                  btn.dataset.status = 'my_fixed_urgent_active';
+                  selectedSlots[`${dateStr}_${slot}`] = { date: dateStr, slot: slot, mode: 'urgent_change' };
                 } else {
-                  // 他人の確定、または誰かの予約済 ➔ 直近なので一律赤色で完全ロック
                   btn.classList.add('bg-red-slot');
                   btn.innerText = '予約済';
                   btn.dataset.status = 'other_fixed_lock';
                 }
               } else {
-                // 誰もいない空き枠 ➔ 穴埋め用の直前募集（緑）
                 btn.classList.add('bg-green-slot');
                 btn.innerText = '予約可';
                 btn.dataset.status = 'available';
@@ -233,15 +241,12 @@
                     btn.dataset.status = 'other_fixed_lock';
                   }
                 } else {
-                  // ステータスが「予約済み（未確定）」の場合の仕分け
                   if (isMyName) {
-                    // 本人の予約 ➔ 青色（選択中）で初期表示、キャンセルも可能
                     btn.classList.add('bg-blue-slot');
                     btn.innerText = '選択中';
                     btn.dataset.status = 'already_reserved_by_me';
                     selectedSlots[`${dateStr}_${slot}`] = { date: dateStr, slot: slot, mode: 'normal' };
                   } else {
-                    // 他人の予約 ➔ 紫色で動かせないロック！
                     btn.classList.add('bg-purple-slot');
                     btn.innerText = '他人の予約';
                     btn.dataset.status = 'other_reserved_lock';
@@ -254,7 +259,7 @@
               }
             }
 
-            // クリックイベント処理（ロックのかかっていない枠）
+            // クリックイベント処理
             const status = btn.dataset.status;
             if (status !== 'confirmed_lock' && status !== 'past_lock' && status !== 'future_lock' && status !== 'other_fixed_lock' && status !== 'other_reserved_lock') {
               btn.addEventListener('click', function(e) {
@@ -262,7 +267,6 @@
                 const key = `${dateStr}_${slot}`;
 
                 if (btn.dataset.status === 'available') {
-                  // 緑 ➔ 青（選択）
                   if (selectedSlots[key]) {
                     delete selectedSlots[key];
                     btn.className = 'slot-btn-box bg-green-slot';
@@ -273,7 +277,6 @@
                     btn.innerText = '選択中';
                   }
                 } else if (btn.dataset.status === 'already_reserved_by_me') {
-                  // 青（本人予約） ➔ キャンセル（緑へ）
                   if (!selectedSlots[key]) {
                     selectedSlots[key] = { date: dateStr, slot: slot, mode: 'normal' };
                     btn.className = 'slot-btn-box bg-blue-slot';
@@ -283,15 +286,12 @@
                     btn.className = 'slot-btn-box bg-green-slot';
                     btn.innerText = '予約可';
                   }
-                } else if (btn.dataset.status === 'my_fixed_urgent') {
-                  // 🌟直近7日間の本人確定（水色） ➔ タップで黄色（変更申請モード）へ！
+                } else if (btn.dataset.status === 'my_fixed_urgent' || btn.dataset.status === 'my_fixed_urgent_active') {
                   if (!selectedSlots[key]) {
-                    // 黄色に変身（送信データにmode: 'urgent_change'を付与してカゴに入れる）
                     selectedSlots[key] = { date: dateStr, slot: slot, mode: 'urgent_change' };
                     btn.className = 'slot-btn-box bg-yellow-slot';
                     btn.innerText = '変更申請';
                   } else {
-                    // 元の水色に戻す（申請キャンセル）
                     delete selectedSlots[key];
                     btn.className = 'slot-btn-box bg-sky-slot';
                     btn.innerText = '確定';
