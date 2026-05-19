@@ -12,52 +12,45 @@
 
   <style>
     :root {
-      --ink: #172026;
-      --muted: #66737c;
-      --paper: #fffdf8;
-      --surface: rgba(255, 255, 255, 0.88);
-      --line: rgba(24, 48, 40, 0.12);
-      --brand: #315f52;
-      --brand-dark: #18382f;
-      --sage: #9fb8a8;
-      --mist: #dce9e6;
-      --cream: #f7f1e7;
-      --apricot: #e8a26d;
+      --ink: #0f172a;
+      --muted: #475569;
+      --surface: rgba(255, 255, 255, 0.95);
+      --line: rgba(15, 23, 42, 0.08);
+      --brand: #1e3a8a;
+      --brand-dark: #0f172a;
     }
 
     html {
-      background: #f4f0e8;
+      background: #f1f5f9;
     }
 
     body {
       color: var(--ink);
       min-height: 100vh;
-      background:
-        radial-gradient(circle at 12% 8%, rgba(159, 184, 168, 0.28), transparent 28%),
-        radial-gradient(circle at 88% 0%, rgba(232, 162, 109, 0.18), transparent 26%),
-        linear-gradient(180deg, #f8f4ec 0%, #eef4f1 100%);
+      background: 
+        radial-gradient(circle at 80% 10%, rgba(59, 130, 246, 0.08), transparent 40%),
+        linear-gradient(180deg, #f8fafc 0%, #e2e8f0 100%);
       -webkit-font-smoothing: antialiased;
     }
 
     .app-shell {
       max-width: 520px;
       margin: 0 auto;
-      padding: 14px 14px 148px;
+      padding: 14px 14px 160px;
     }
 
+    /* ヘッダー：Gemini風の洗練されたディープネイビー */
     .top-card {
       position: sticky;
       top: 0;
       z-index: 50;
       margin: 0 -14px 14px;
-      padding: 14px 16px 16px;
+      padding: 16px;
       color: #fff;
-      background:
-        linear-gradient(135deg, rgba(24, 56, 47, 0.98), rgba(49, 95, 82, 0.96)),
-        radial-gradient(circle at top right, rgba(232, 162, 109, 0.35), transparent 35%);
-      box-shadow: 0 14px 34px rgba(24, 56, 47, 0.22);
-      border-bottom: 1px solid rgba(255, 255, 255, 0.18);
-      backdrop-filter: blur(12px);
+      background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
+      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.15);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(8px);
     }
 
     .brand-row {
@@ -71,55 +64,49 @@
       display: flex;
       align-items: center;
       gap: 10px;
-      font-weight: 900;
-      letter-spacing: 0.02em;
+      font-weight: 800;
       line-height: 1.15;
     }
 
     .brand-icon {
-      width: 38px;
-      height: 38px;
-      border-radius: 15px;
+      width: 36px;
+      height: 36px;
+      border-radius: 12px;
       display: grid;
       place-items: center;
-      background: rgba(255, 255, 255, 0.14);
-      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.2);
+      background: rgba(255, 255, 255, 0.15);
     }
 
     .brand-kicker {
       display: block;
       font-size: 10px;
-      letter-spacing: 0.16em;
-      color: rgba(255, 255, 255, 0.72);
-      margin-bottom: 2px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      color: rgba(255, 255, 255, 0.6);
+      margin-bottom: 1px;
     }
 
     #user-info {
       flex-shrink: 0;
-      max-width: 42%;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
       font-size: 12px;
       font-weight: 800;
-      padding: 8px 10px;
+      padding: 6px 12px;
       border-radius: 999px;
-      color: #17352d;
-      background: rgba(255, 255, 255, 0.88);
-      box-shadow: 0 7px 18px rgba(0, 0, 0, 0.12);
+      color: #0f172a;
+      background: #ffffff;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     }
 
     .guide-card,
     .calendar-card {
       background: var(--surface);
-      border: 1px solid rgba(255, 255, 255, 0.72);
-      border-radius: 24px;
-      box-shadow: 0 18px 48px rgba(37, 56, 48, 0.12);
-      backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.8);
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(51, 65, 85, 0.06);
     }
 
     .guide-card {
-      padding: 12px;
+      padding: 14px;
       margin-bottom: 12px;
     }
 
@@ -127,12 +114,10 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 8px;
       color: var(--brand-dark);
-      font-size: 12px;
-      font-weight: 900;
+      font-size: 13px;
+      font-weight: 800;
       margin-bottom: 10px;
-      padding: 0 2px;
     }
 
     .legend-grid {
@@ -142,122 +127,79 @@
     }
 
     .legend-item {
-      min-height: 46px;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      gap: 4px;
-      border-radius: 16px;
-      font-size: 10px;
-      font-weight: 900;
-      line-height: 1.1;
+      padding: 8px 0;
+      border-radius: 8px;
+      font-size: 11px;
+      font-weight: 800;
       color: #fff;
-      box-shadow: 0 8px 18px rgba(24, 48, 40, 0.12);
-    }
-
-    .legend-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 999px;
-      background: rgba(255, 255, 255, 0.85);
+      text-shadow: 0 1px 2px rgba(0,0,0,0.2);
     }
 
     .calendar-card {
-      padding: 12px 10px 14px;
-      overflow: hidden;
+      padding: 12px;
     }
 
-    /* FullCalendar 全体調整 */
+    /* FullCalendar 文字がっつり太め調整 */
     .fc {
-      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      color: var(--ink);
-    }
-
-    .fc .fc-toolbar.fc-header-toolbar {
-      margin-bottom: 12px;
-      padding: 2px 2px 8px;
+      font-family: system-ui, -apple-system, sans-serif;
     }
 
     .fc .fc-toolbar-title {
       font-size: 18px;
-      font-weight: 950;
-      letter-spacing: 0.02em;
+      font-weight: 800;
       color: var(--brand-dark);
     }
 
     .fc .fc-button-primary {
       border: 0 !important;
-      border-radius: 999px !important;
-      background: #edf4f1 !important;
+      border-radius: 8px !important;
+      background: #e2e8f0 !important;
       color: var(--brand-dark) !important;
-      box-shadow: inset 0 0 0 1px rgba(49, 95, 82, 0.12), 0 7px 16px rgba(37, 56, 48, 0.08) !important;
-      font-weight: 900 !important;
-    }
-
-    .fc .fc-button-primary:focus,
-    .fc .fc-button-primary:active {
-      box-shadow: inset 0 0 0 1px rgba(49, 95, 82, 0.22), 0 7px 16px rgba(37, 56, 48, 0.12) !important;
-    }
-
-    .fc-theme-standard .fc-scrollgrid,
-    .fc-theme-standard td,
-    .fc-theme-standard th {
-      border-color: var(--line) !important;
+      font-weight: 800 !important;
     }
 
     .fc-theme-standard .fc-scrollgrid {
-      border-radius: 18px;
+      border-radius: 12px;
       overflow: hidden;
-      background: rgba(255, 255, 255, 0.64);
+      border: 1px solid #cbd5e1 !important;
     }
 
     .fc .fc-col-header-cell {
-      background: rgba(237, 244, 241, 0.9);
-      padding: 5px 0;
+      background: #f8fafc;
+      padding: 6px 0;
     }
 
     .fc .fc-col-header-cell-cushion {
-      color: #49615a;
-      font-size: 11px;
-      font-weight: 950;
+      color: #334155;
+      font-size: 12px;
+      font-weight: 800;
       text-decoration: none;
-    }
-
-    .fc .fc-daygrid-day {
-      background: rgba(255, 255, 255, 0.52);
-    }
-
-    .fc .fc-daygrid-day.fc-day-today {
-      background: rgba(232, 162, 109, 0.13) !important;
     }
 
     .fc .fc-daygrid-day-number {
-      padding: 5px 6px 0 0;
-      font-size: 11px;
-      font-weight: 900;
-      color: #394942;
+      padding: 4px 6px 0 0;
+      font-size: 12px;
+      font-weight: 800;
+      color: #1e293b;
       text-decoration: none;
     }
 
+    .fc .fc-daygrid-day.fc-day-today {
+      background: rgba(59, 130, 246, 0.06) !important;
+    }
+
     .fc .fc-day-other {
-      background: rgba(244, 240, 232, 0.56);
+      background: #f8fafc;
     }
 
-    .fc .fc-day-other .slot-block {
-      opacity: 0.42;
-    }
-
-    /* カレンダーのマス全体のイベントコンテナ調整 */
     .fc-daygrid-day-events {
       display: flex;
       flex-direction: column;
-      gap: 6px;
-      padding: 2px 3px 5px !important;
-      min-height: 62px !important;
+      gap: 8px;
+      padding: 4px !important;
+      min-height: 70px !important;
     }
 
-    /* 上下に「文字」と「ボタン」を並べるためのコンテナ */
     .slot-block {
       display: flex;
       flex-direction: column;
@@ -266,78 +208,75 @@
       gap: 2px;
     }
 
-    /* ボタンのすぐ上に表示するAM/PMテキスト */
+    /* 【改善】AM/PMテキスト：はっきり見えるように太字＆黒めに変更 */
     .slot-label-top {
-      font-size: 9px;
-      font-weight: 950;
-      color: #38524a;
+      font-size: 10px;
+      font-weight: 900;
+      color: #0f172a;
       text-align: center;
       line-height: 1;
-      letter-spacing: 0.08em;
+      letter-spacing: 0.05em;
     }
 
-    /* 文字を入れる四角いボタン */
+    /* 【改善】ボタン：原色に近い鮮やかなグラデ＋視認性MAXの白文字 */
     .slot-btn-box {
       width: 100%;
       text-align: center;
-      padding: 5px 0;
-      font-size: 10px;
-      font-weight: 950;
-      border-radius: 10px;
+      padding: 6px 0;
+      font-size: 11px;
+      font-weight: 900;
+      border-radius: 6px;
       cursor: pointer;
       user-select: none;
-      transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+      transition: all 0.1s ease;
       white-space: nowrap;
-      letter-spacing: 0.02em;
-      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.22), 0 6px 12px rgba(37, 56, 48, 0.11);
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3); /* 文字の輪郭をクッキリさせる影 */
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
     }
 
     .slot-btn-box:active {
-      transform: scale(0.96);
-      filter: brightness(0.98);
+      transform: scale(0.95);
     }
 
-    /* カラーロジック：クラス名はJSが使うため絶対維持 */
+    /* パキッとした視認性の高い原色グラデーション（白文字が映える設計） */
     .bg-green-slot {
-      background: linear-gradient(135deg, #7fae92, #4f8c70) !important;
+      background: linear-gradient(180deg, #22c55e 0%, #15803d 100%) !important;
       color: #ffffff !important;
     }
 
     .bg-red-slot {
-      background: linear-gradient(135deg, #d88478, #b65c55) !important;
+      background: linear-gradient(180deg, #ef4444 0%, #b91c1c 100%) !important;
       color: #ffffff !important;
     }
 
     .bg-blue-slot {
-      background: linear-gradient(135deg, #6f9fc8, #3f75a6) !important;
+      background: linear-gradient(180deg, #3b82f6 0%, #1d4ed8 100%) !important;
       color: #ffffff !important;
-      outline: 2px solid rgba(255, 255, 255, 0.65) !important;
-      outline-offset: -3px !important;
+      box-shadow: 0 0 0 2px #ffffff, 0 4px 10px rgba(29, 78, 216, 0.4) !important;
     }
 
     .bg-purple-slot {
-      background: linear-gradient(135deg, #a889c5, #7b5aa3) !important;
+      background: linear-gradient(180deg, #a855f7 0%, #6b21a8 100%) !important;
       color: #ffffff !important;
     }
 
     .bg-sky-slot {
-      background: linear-gradient(135deg, #8fc6d6, #5fa8bd) !important;
+      background: linear-gradient(180deg, #0ea5e9 0%, #0369a1 100%) !important;
       color: #ffffff !important;
       cursor: not-allowed !important;
-      opacity: 0.92 !important;
     }
 
-    /* 土日の曜日カラー変更 */
+    /* 土日の曜日カラー：Gemini仕様のクッキリブルー＆レッド */
     .fc-day-sat .fc-col-header-cell-cushion,
     .fc-day-sat .fc-daygrid-day-number {
-      color: #3f75a6 !important;
-      font-weight: 950;
+      color: #2563eb !important;
+      font-weight: 900;
     }
 
     .fc-day-sun .fc-col-header-cell-cushion,
     .fc-day-sun .fc-daygrid-day-number {
-      color: #b65c55 !important;
-      font-weight: 950;
+      color: #dc2626 !important;
+      font-weight: 900;
     }
 
     .action-bar {
@@ -347,10 +286,10 @@
       bottom: 0;
       z-index: 50;
       padding: 14px 14px calc(14px + env(safe-area-inset-bottom));
-      background: rgba(255, 253, 248, 0.92);
-      border-top: 1px solid rgba(24, 48, 40, 0.12);
-      box-shadow: 0 -18px 45px rgba(37, 56, 48, 0.13);
-      backdrop-filter: blur(18px);
+      background: rgba(255, 255, 255, 0.95);
+      border-top: 1px solid #e2e8f0;
+      box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.05);
+      backdrop-filter: blur(10px);
     }
 
     .action-inner {
@@ -358,72 +297,47 @@
       margin: 0 auto;
       display: flex;
       flex-direction: column;
-      gap: 9px;
+      gap: 10px;
     }
 
     #submit-btn,
     #close-btn {
       width: 100%;
       border: 0;
-      border-radius: 18px;
-      font-weight: 950;
+      border-radius: 12px;
+      font-weight: 800;
       display: flex;
       justify-content: center;
       align-items: center;
       gap: 8px;
-      transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+      transition: all 0.15s ease;
     }
 
     #submit-btn {
       padding: 14px 16px;
       color: #fff;
-      background: linear-gradient(135deg, var(--brand), var(--brand-dark));
-      box-shadow: 0 14px 28px rgba(24, 56, 47, 0.25);
+      background: linear-gradient(180deg, #2563eb 0%, #1d4ed8 100%);
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+      font-size: 15px;
     }
 
     #submit-btn:disabled {
-      opacity: 0.42;
-      background: #9daaa4;
+      opacity: 0.4;
+      background: #94a3b8 !important;
       box-shadow: none;
     }
 
-    #submit-btn:not(:disabled):active,
-    #close-btn:active {
-      transform: scale(0.985);
-    }
-
     #close-btn {
-      padding: 11px 16px;
-      color: #40524b;
-      background: rgba(237, 244, 241, 0.96);
-      box-shadow: inset 0 0 0 1px rgba(49, 95, 82, 0.12);
+      padding: 12px 16px;
+      color: #475569;
+      background: #f1f5f9;
+      border: 1px solid #cbd5e1;
       font-size: 13px;
     }
 
     @media (max-width: 390px) {
-      .app-shell {
-        padding-left: 10px;
-        padding-right: 10px;
-      }
-
-      .legend-grid {
-        gap: 4px;
-      }
-
-      .legend-item {
-        min-height: 42px;
-        border-radius: 14px;
-        font-size: 9px;
-      }
-
-      .slot-btn-box {
-        font-size: 9px;
-        border-radius: 8px;
-      }
-
-      .fc .fc-toolbar-title {
-        font-size: 16px;
-      }
+      .legend-item { font-size: 10px; }
+      .slot-btn-box { font-size: 9.5px; padding: 5px 0; }
     }
   </style>
 </head>
@@ -445,15 +359,15 @@
   <main class="app-shell">
     <section class="guide-card" aria-label="ステータス説明">
       <div class="guide-title">
-        <span><i class="fa-solid fa-list-check"></i> ステータス</span>
-        <span>AM / PM を選択</span>
+        <span><i class="fa-solid fa-list-check mr-1"></i> ステータス凡例</span>
+        <span class="text-xs text-slate-500">タップして選択</span>
       </div>
       <div class="legend-grid text-center">
-        <div class="legend-item bg-green-slot"><span class="legend-dot"></span><span>予約可</span></div>
-        <div class="legend-item bg-red-slot"><span class="legend-dot"></span><span>予約済</span></div>
-        <div class="legend-item bg-sky-slot"><span class="legend-dot"></span><span>確定</span></div>
-        <div class="legend-item bg-blue-slot"><span class="legend-dot"></span><span>選択中</span></div>
-        <div class="legend-item bg-purple-slot"><span class="legend-dot"></span><span>競合中</span></div>
+        <div class="legend-item bg-green-slot">予約可</div>
+        <div class="legend-item bg-red-slot">予約済</div>
+        <div class="legend-item bg-sky-slot">確定</div>
+        <div class="legend-item bg-blue-slot">選択中</div>
+        <div class="legend-item bg-purple-slot">競合中</div>
       </div>
     </section>
 
@@ -636,26 +550,4 @@
       const encodedData = encodeURIComponent(JSON.stringify(payload));
       const finalUrl = `${GAS_URL}?action=submitShift&data=${encodedData}`;
 
-      const forceRefreshTimeout = setTimeout(() => {
-        alert("シフト希望を受け付けました！(最新の状態に更新します)");
-        selectedSlots = {};
-        initSystem();
-      }, 1200);
-
-      fetch(finalUrl, { method: "GET", mode: "no-cors" })
-      .then(() => {
-        clearTimeout(forceRefreshTimeout);
-        alert("シフト希望を提出しました！先着判定の上、シートに記録されました。");
-        selectedSlots = {};
-        initSystem(); 
-      })
-      .catch(err => {
-        clearTimeout(forceRefreshTimeout);
-        alert("シフト希望の送信処理を完了しました。カレンダーを更新します。");
-        selectedSlots = {};
-        initSystem();
-      });
-    });
-  </script>
-</body>
-</html>
+      const
