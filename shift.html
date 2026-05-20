@@ -514,7 +514,7 @@
           data.forEach(d => {
             if (d.status === "確定" || d.status === "休み確定") {
               confirmedDays[d.date] = d.status;
-            } else if (d.status === "休み希望" && d.userId === userId) {
+            } else if (d.status === "休み希望") {
               previousSubmission[d.date] = true;
             }
           });
