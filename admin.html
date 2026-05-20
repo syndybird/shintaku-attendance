@@ -19,6 +19,7 @@
     .fc-day-sat .fc-col-header-cell-cushion, .fc-day-sat .fc-daygrid-day-number { color: #2563eb !important; }
     .fc-day-sun .fc-col-header-cell-cushion, .fc-day-sun .fc-daygrid-day-number { color: #dc2626 !important; }
   </style>
+  <script src="config.js"></script>
 </head>
 <body class="bg-slate-900 text-slate-100 font-sans min-h-screen pb-12">
 
@@ -53,7 +54,7 @@
   </div>
 
   <script>
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbxm7UaGS-K8ifm6zbqja199RqTt2GzIlRoMzGHjYjGW3TU_SlrtoJaz5vAw4GmQi0Wi/exec";
+    const GAS_URL = CONFIG.GAS_URL;
     let currentSheetData = [];
     let activeTarget = null;
 

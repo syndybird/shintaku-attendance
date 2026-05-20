@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>SHINTAKU 勤怠</title>
 
+  <script src="config.js"></script>
   <script
     charset="utf-8"
     src="https://static.line-scdn.net/liff/edge/2/sdk.js">
@@ -49,9 +50,8 @@
 </div>
 
 <script>
-  const myLiffId = "2010136950-uGfcZEcw";
-  // ★あなたの最新のウェブアプリURL（/execで終わるもの）に書き換えてください！
-  const gasUrl = "https://script.google.com/macros/s/AKfycbyOmKVAR3pmTx7IKIxx4p2_rHqenCFoh2VaAUds3cDneaBG6YXfzIr8fURFVfJ4IHCs/exec";
+  const myLiffId = CONFIG.LIFF_ID_ATTENDANCE;
+  const gasUrl = CONFIG.GAS_URL;
 
   const status = document.getElementById("status");
   const detail = document.getElementById("detail");

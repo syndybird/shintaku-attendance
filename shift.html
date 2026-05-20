@@ -7,6 +7,7 @@
   <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <script src="config.js"></script>
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   
   <style>
@@ -75,8 +76,8 @@
 
   <script>
     // ========== 設定 ==========
-    const GAS_URL = "https://script.google.com/macros/s/YOUR_GAS_DEPLOYMENT_ID/exec";
-    const LIFF_ID = "YOUR_LIFF_ID";
+    const GAS_URL = CONFIG.GAS_URL;
+    const LIFF_ID = CONFIG.LIFF_ID_SHIFT;
 
     const FIXED_DAYS = 7;      
     const RECRUIT_DAYS = 14;   
