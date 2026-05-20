@@ -9,8 +9,6 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   
-  <script src="./config.js"></script>
-
   <style>
     .fc-daygrid-day-events { display: flex; flex-direction: column; gap: 6px; padding: 2px !important; }
     .slot-block { display: flex; flex-direction: column; align-items: center; width: 100%; gap: 1px; }
@@ -22,7 +20,7 @@
     .bg-blue-slot { background-color: #3b82f6; color: #ffffff; border: 1px solid #1d4ed8; }   
     .bg-purple-slot { background-color: #a855f7; color: #ffffff; cursor: not-allowed; } 
     .bg-sky-slot { background-color: #38bdf8; color: #ffffff; } 
-    .bg-yellow-slot { background-color: #eab308; color: #ffffff; border: 1px solid #a16207; } 
+    .bg-yellow-slot { background-color: #eab308; color: #000000; border: 1px solid #a16207; } 
     .bg-past-slot { background-color: #cbd5e1 !important; color: #64748b !important; border: none !important; cursor: not-allowed !important; opacity: 0.6; }
 
     .fc-day-sat .fc-col-header-cell-cushion, .fc-day-sat .fc-daygrid-day-number { color: #2563eb !important; font-weight: bold; } 
@@ -41,7 +39,7 @@
       <i class="fa-solid fa-circle-xmark text-red-500 text-5xl mb-4"></i>
       <h2 class="text-xl font-bold text-slate-800 mb-2">アクセス権限がありません</h2>
       <p class="text-sm text-slate-500 leading-relaxed">
-        このシステムは、しんたく牧場の登録スタッフ専用です。<br>利用するには管理者に連絡してください。
+        このシステムは、登録スタッフ専用です。<br>利用するには管理者に連絡してください。
       </p>
     </div>
   </div>
@@ -57,8 +55,8 @@
       <div class="p-1 bg-blue-500 text-white rounded">青:本人予約</div>
       <div class="p-1 bg-purple-500 text-white rounded">紫:他人予約</div>
       <div class="p-1 bg-sky-400 text-white rounded">水色:確定</div>
-      <div class="p-1 bg-yellow-500 text-white rounded">黄:直近変更</div>
-      <div class="p-1 bg-red-500 text-white rounded">赤:予約済</div>
+      <div class="p-1 bg-yellow-500 text-white rounded">黄:変更申請</div>
+      <div class="p-1 bg-red-500 text-white rounded">赤:ロック</div>
     </div>
 
     <div class="max-w-md mx-auto p-2 bg-white rounded-lg shadow-md m-3">
@@ -66,7 +64,7 @@
     </div>
 
     <div class="fixed bottom-0 left-0 right-0 p-4 bg-white shadow-lg border-t border-slate-200 flex flex-col items-center gap-2 z-50">
-      <button id="submit-btn" class="w-full max-w-md bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-md flex justify-center items-center gap-2 transition disabled:bg-slate-400" disabled>
+      <button id="submit-btn" class="w-full max-w-md bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-md flex justify-center items-center gap-2 transition disabled:bg-slate-400">
         <i class="fa-solid fa-paper-plane"></i> シフトを提出する (<span id="select-count">0</span>)
       </button>
       <button id="close-btn" class="w-full max-w-md bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-2 rounded-xl text-sm flex justify-center items-center gap-2 transition">
@@ -76,8 +74,9 @@
   </div>
 
   <script>
-    const GAS_URL = CONFIG.GAS_URL;
-    const LIFF_ID = CONFIG.LIFF_ID_SHIFT;
+    // ========== 設定 ==========
+    const GAS_URL = "https://script.google.com/macros/s/YOUR_GAS_DEPLOYMENT_ID/exec";
+    const LIFF_ID = "YOUR_LIFF_ID";
 
     const FIXED_DAYS = 7;      
     const RECRUIT_DAYS = 14;   
@@ -85,8 +84,9 @@
     let userName = ""; 
     let userId = ""; 
     let currentSheetData = []; 
-    let selectedSlots = {};   
+    let selectedSlots = {};
 
+    // ========== LIFF初期化 ==========
     document.addEventListener("DOMContentLoaded", function() {
       liff.init({ liffId: LIFF_ID })
         .then(() => {
@@ -97,15 +97,18 @@
               userName = profile.displayName.trim(); 
               userId = profile.userId; 
               checkUserAccess();
+            }).catch(err => {
+              showError("プロフィール取得に失敗しました");
             });
           }
         }).catch(err => {
-          alert("LINEログインの初期化に失敗しました。");
+          showError("LIFF初期化に失敗しました");
         });
     });
 
+    // ========== ユーザーアクセス確認 ==========
     function checkUserAccess() {
-      fetch(`${GAS_URL}?action=checkUser&userId=${userId}`, { method: "GET", redirect: "follow" })
+      fetch(`${GAS_URL}?action=checkUser&userId=${encodeURIComponent(userId)}`, { method: "GET", redirect: "follow" })
         .then(res => res.json())
         .then(result => {
           document.getElementById("loading-screen").classList.add("hidden");
@@ -119,11 +122,11 @@
           }
         })
         .catch(err => {
-          document.getElementById("loading-screen").className = "fixed inset-0 bg-slate-100 flex flex-col justify-center items-center z-[100] text-red-600 font-bold p-4 text-center";
-          document.getElementById("loading-screen").innerHTML = "<i class='fa-solid fa-triangle-exclamation text-3xl mb-2'></i><br>通信エラーが発生しました。";
+          showError("アクセス確認に失敗しました: " + err.message);
         });
     }
 
+    // ========== システム初期化 ==========
     function initSystem() {
       fetch(`${GAS_URL}?action=getShift`, { method: "GET", redirect: "follow" })
         .then(res => res.json())
@@ -131,10 +134,11 @@
           currentSheetData = data;
           renderCalendar();
         }).catch(err => {
-          alert("シフトデータの取得に失敗しました。");
+          showError("シフトデータ取得に失敗しました");
         });
     }
 
+    // ========== カレンダーレンダリング ==========
     function renderCalendar() {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
@@ -146,6 +150,10 @@
       endOfRecruitDate.setDate(endOfRecruitDate.getDate() + FIXED_DAYS + RECRUIT_DAYS);
 
       const calendarEl = document.getElementById('calendar');
+      if (calendarEl.querySelector('.fc-scroller')) {
+        calendarEl.innerHTML = '';
+      }
+
       const calendar = new FullCalendar.Calendar(calendarEl, {
         initialView: 'dayGridMonth',
         locale: 'ja',
@@ -168,7 +176,7 @@
 
           const eventsContainer = info.el.querySelector('.fc-daygrid-day-events');
           if (!eventsContainer) return;
-          eventsContainer.innerHTML = ''; 
+          eventsContainer.innerHTML = '';
 
           ['AM', 'PM'].forEach(slot => {
             const blockDiv = document.createElement('div');
@@ -186,9 +194,9 @@
             
             const sheetStatus = match && match.status ? String(match.status).trim() : "";
             const sheetUid = match && match.userId ? String(match.userId).trim() : "";
-
             const isMyName = (sheetUid !== "" && sheetUid === userId);
 
+            // ★★★ ステータス判定ロジック ★★★
             if (isPast) {
               if (sheetStatus === '確定' && isMyName) {
                 btn.classList.add('bg-sky-slot');
@@ -260,7 +268,9 @@
 
             // クリックイベント
             const status = btn.dataset.status;
-            if (status !== 'confirmed_lock' && status !== 'past_lock' && status !== 'future_lock' && status !== 'other_fixed_lock' && status !== 'other_reserved_lock') {
+            const clickableStatuses = ['available', 'already_reserved_by_me', 'my_fixed_urgent', 'my_fixed_urgent_active'];
+            
+            if (clickableStatuses.includes(status)) {
               btn.addEventListener('click', function(e) {
                 e.stopPropagation();
                 const key = `${dateStr}_${slot}`;
@@ -275,7 +285,7 @@
                     btn.className = 'slot-btn-box bg-blue-slot';
                     btn.innerText = '選択中';
                   }
-                } else if (btn.dataset.status === 'already_reserved_by_me') { // 🌟【ここを完全に修正！】
+                } else if (btn.dataset.status === 'already_reserved_by_me') {
                   if (!selectedSlots[key]) {
                     selectedSlots[key] = { date: dateStr, slot: slot, mode: 'normal' };
                     btn.className = 'slot-btn-box bg-blue-slot';
@@ -309,18 +319,21 @@
       updateSubmitButton(); 
     }
 
+    // ========== 提出ボタン更新 ==========
     function updateSubmitButton() {
       const count = Object.keys(selectedSlots).length;
       document.getElementById('select-count').innerText = count;
       document.getElementById('submit-btn').disabled = (count === 0); 
     }
 
+    // ========== 閉じるボタン ==========
     document.getElementById('close-btn').addEventListener('click', function() {
       if (liff.isInClient()) {
         liff.closeWindow(); 
       }
     });
 
+    // ========== 提出ボタン ==========
     document.getElementById('submit-btn').addEventListener('click', function() {
       const btn = this;
       btn.disabled = true;
@@ -336,31 +349,37 @@
       const finalUrl = `${GAS_URL}?action=submitShift&data=${encodedData}`;
 
       fetch(finalUrl, { method: "GET", redirect: "follow" })
-      .then(res => res.json())
-      .then(result => {
-        if (result.result === "success") {
-          alert("シフト希望を提出しました！");
+        .then(res => res.json())
+        .then(result => {
+          if (result.result === "success") {
+            alert("シフト希望を提出しました！");
+            selectedSlots = {};
+            
+            setTimeout(() => {
+              btn.innerHTML = `<i class="fa-solid fa-paper-plane"></i> シフトを提出する`;
+              initSystem(); 
+            }, 600);
+          } else {
+            alert("エラー: " + (result.message || "不明"));
+            btn.innerHTML = `<i class="fa-solid fa-paper-plane"></i> シフトを提出する`;
+            btn.disabled = false;
+          }
+        })
+        .catch(err => {
+          alert("送信処理: " + err.message);
           selectedSlots = {};
-          
           setTimeout(() => {
             btn.innerHTML = `<i class="fa-solid fa-paper-plane"></i> シフトを提出する`;
-            initSystem(); 
+            initSystem();
           }, 600);
-        } else {
-          alert("エラー: " + result.message);
-          btn.innerHTML = `<i class="fa-solid fa-paper-plane"></i> シフトを提出する`;
-          btn.disabled = false;
-        }
-      })
-      .catch(err => {
-        alert("送信処理を完了しました。最新の状況に更新します。");
-        selectedSlots = {};
-        setTimeout(() => {
-          btn.innerHTML = `<i class="fa-solid fa-paper-plane"></i> シフトを提出する`;
-          initSystem();
-        }, 600);
-      });
+        });
     });
+
+    // ========== エラー表示 ==========
+    function showError(message) {
+      document.getElementById("loading-screen").className = "fixed inset-0 bg-slate-100 flex flex-col justify-center items-center z-[100] text-red-600 font-bold p-4 text-center";
+      document.getElementById("loading-screen").innerHTML = "<i class='fa-solid fa-triangle-exclamation text-3xl mb-2'></i><br>" + message;
+    }
   </script>
 </body>
 </html>
