@@ -104,6 +104,7 @@
         });
     });
 
+    // 🌟【通信ブロック解除】redirect: "follow" を追加して、GASの特殊な転送URLにブラウザを自動追従させます
     function checkUserAccess() {
       fetch(`${GAS_URL}?action=checkUser&userId=${userId}`, { method: "GET", redirect: "follow" })
         .then(res => res.json())
@@ -124,6 +125,7 @@
         });
     }
 
+    // 🌟【通信ブロック解除】ここにも redirect: "follow" を追加
     function initSystem() {
       fetch(`${GAS_URL}?action=getShift`, { method: "GET", redirect: "follow" })
         .then(res => res.json())
@@ -321,6 +323,7 @@
       }
     });
 
+    // 🌟【通信ブロック解除】ここにも redirect: "follow" を追加して安全にデータ送信とリロードを行います
     document.getElementById('submit-btn').addEventListener('click', function() {
       const btn = this;
       btn.disabled = true;
