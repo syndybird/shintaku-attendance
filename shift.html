@@ -2,92 +2,426 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>SHINTAKU WORKS シフト予約</title>
+
   <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <script src="config.js"></script>
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+
   <style>
-    .fc-daygrid-day-events { display: flex; flex-direction: column; gap: 6px; padding: 2px !important; }
-    .slot-block { display: flex; flex-direction: column; align-items: center; width: 100%; gap: 1px; }
-    .slot-label-top { font-size: 10px; font-weight: 800; color: #000000; text-align: center; line-height: 1; margin-bottom: 2px; }
-    .slot-btn-box { width: 100%; text-align: center; padding: 4px 0; font-size: 10px; font-weight: bold; border-radius: 4px; cursor: pointer; user-select: none; transition: all 0.2s; white-space: nowrap; }
+    /* CSS変数はconfig.jsから自動適用されます */
 
-    .bg-green-slot { background-color: #22c55e; color: #ffffff; }  
-    .bg-red-slot { background-color: #ef4444; color: #ffffff; cursor: not-allowed; }    
-    .bg-blue-slot { background-color: #3b82f6; color: #ffffff; border: 1px solid #1d4ed8; }   
-    .bg-purple-slot { background-color: #a855f7; color: #ffffff; cursor: not-allowed; } 
-    .bg-sky-slot { background-color: #38bdf8; color: #ffffff; } 
-    .bg-yellow-slot { background-color: #eab308; color: #000000; border: 1px solid #a16207; } 
-    .bg-past-slot { background-color: #cbd5e1 !important; color: #64748b !important; border: none !important; cursor: not-allowed !important; opacity: 0.6; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
 
-    .fc-day-sat .fc-col-header-cell-cushion, .fc-day-sat .fc-daygrid-day-number { color: #2563eb !important; font-weight: bold; } 
-    .fc-day-sun .fc-col-header-cell-cushion, .fc-day-sun .fc-daygrid-day-number { color: #dc2626 !important; font-weight: bold; } 
+    body {
+      background: var(--bg);
+      font-family: var(--font-body), -apple-system, sans-serif;
+      min-height: 100vh;
+      padding-bottom: 120px;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: radial-gradient(circle at 20% 20%, rgba(0,0,0,0.025) 1px, transparent 1px);
+      background-size: 32px 32px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ===== ローディング ===== */
+    #loading-screen {
+      position: fixed; inset: 0;
+      background: var(--bg);
+      display: flex; flex-direction: column;
+      justify-content: center; align-items: center;
+      z-index: 100;
+    }
+
+    .spinner {
+      width: 36px; height: 36px;
+      border: 3px solid var(--divider);
+      border-top-color: var(--brand);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-bottom: 16px;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    #loading-screen p {
+      font-size: 13px;
+      color: var(--text-sub);
+      letter-spacing: 0.05em;
+    }
+
+    /* ===== アクセス拒否 ===== */
+    #gate-screen {
+      display: none;
+      position: fixed; inset: 0;
+      background: var(--bg);
+      justify-content: center; align-items: center;
+      padding: 24px;
+      z-index: 90;
+    }
+
+    .gate-card {
+      background: var(--card);
+      border-radius: 20px;
+      padding: 40px 28px;
+      text-align: center;
+      max-width: 340px;
+      width: 100%;
+      border: 1px solid var(--divider);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.06);
+    }
+
+    .gate-icon {
+      font-size: 40px;
+      color: #ef4444;
+      margin-bottom: 16px;
+    }
+
+    .gate-card h2 {
+      font-family: var(--font-display);
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--text-main);
+      margin-bottom: 10px;
+    }
+
+    .gate-card p {
+      font-size: 13px;
+      color: var(--text-sub);
+      line-height: 1.8;
+    }
+
+    /* ===== メインコンテンツ ===== */
+    #main-content { display: none; position: relative; z-index: 1; }
+
+    /* ===== ヘッダー ===== */
+    header {
+      background: var(--brand);
+      color: #fff;
+      padding: 16px 20px;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .header-left .brand-name {
+      font-family: var(--font-display);
+      font-size: 16px;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .header-left .brand-sub {
+      font-size: 10px;
+      letter-spacing: 0.15em;
+      color: rgba(255,255,255,0.5);
+      text-transform: uppercase;
+      margin-top: 1px;
+    }
+
+    .user-badge {
+      font-size: 12px;
+      font-weight: 500;
+      background: rgba(255,255,255,0.12);
+      padding: 6px 12px;
+      border-radius: 20px;
+      letter-spacing: 0.02em;
+    }
+
+    /* ===== 凡例 ===== */
+    .legend {
+      max-width: 480px;
+      margin: 12px auto;
+      padding: 12px 16px;
+      background: var(--card);
+      border-radius: 12px;
+      border: 1px solid var(--divider);
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--text-main);
+    }
+
+    .legend-dot {
+      width: 10px; height: 10px;
+      border-radius: 3px;
+      flex-shrink: 0;
+    }
+
+    /* ===== カレンダーラッパー ===== */
+    .cal-wrap {
+      max-width: 480px;
+      margin: 0 auto 12px;
+      padding: 0 12px;
+    }
+
+    .cal-card {
+      background: var(--card);
+      border-radius: 16px;
+      border: 1px solid var(--divider);
+      overflow: hidden;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+      padding: 12px 8px 16px;
+    }
+
+    /* ===== FullCalendar カスタマイズ ===== */
+    .fc .fc-toolbar-title {
+      font-family: var(--font-display);
+      font-size: 16px !important;
+      font-weight: 800;
+      color: var(--text-main);
+    }
+
+    .fc .fc-button {
+      background: var(--brand) !important;
+      border-color: var(--brand) !important;
+      border-radius: 8px !important;
+      font-size: 12px !important;
+      padding: 4px 10px !important;
+    }
+
+    .fc .fc-col-header-cell-cushion {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-sub);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .fc-day-sat .fc-col-header-cell-cushion,
+    .fc-day-sat .fc-daygrid-day-number { color: #2563eb !important; font-weight: 700; }
+    .fc-day-sun .fc-col-header-cell-cushion,
+    .fc-day-sun .fc-daygrid-day-number { color: #dc2626 !important; font-weight: 700; }
+
+    .fc .fc-daygrid-day-number {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-sub);
+      padding: 2px 4px;
+    }
+
+    .fc .fc-daygrid-day-events {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      padding: 2px 2px 4px !important;
+    }
+
+    /* ===== スロットブロック ===== */
+    .slot-block {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+      gap: 1px;
+    }
+
+    .slot-label {
+      font-size: 9px;
+      font-weight: 800;
+      color: var(--text-sub);
+      letter-spacing: 0.05em;
+      line-height: 1;
+      margin-bottom: 1px;
+    }
+
+    .slot-btn {
+      width: 100%;
+      text-align: center;
+      padding: 3px 1px;
+      font-size: 9px;
+      font-weight: 700;
+      border-radius: 5px;
+      cursor: pointer;
+      user-select: none;
+      transition: opacity 0.15s, transform 0.1s;
+      white-space: nowrap;
+      letter-spacing: 0.02em;
+    }
+
+    .slot-btn:active { transform: scale(0.95); }
+
+    .slot-open    { background: var(--slot-open);   color: var(--slot-open-txt); }
+    .slot-mine    { background: var(--slot-mine);   color: var(--slot-mine-txt); }
+    .slot-other   { background: var(--slot-other);  color: var(--slot-other-txt); cursor: not-allowed; }
+    .slot-fixed   { background: var(--slot-fixed);  color: var(--slot-fixed-txt); }
+    .slot-change  { background: var(--slot-change); color: var(--slot-change-txt); }
+    .slot-lock    { background: var(--slot-lock);   color: var(--slot-lock-txt); cursor: not-allowed; }
+    .slot-past    { background: var(--slot-past);   color: var(--slot-past-txt); cursor: not-allowed; opacity: 0.7; }
+
+    /* ===== フッターボタン ===== */
+    .footer-bar {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      background: var(--card);
+      border-top: 1px solid var(--divider);
+      padding: 12px 16px 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      z-index: 50;
+    }
+
+    .btn-submit {
+      width: 100%;
+      max-width: 480px;
+      background: var(--brand);
+      color: #fff;
+      font-family: var(--font-body);
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      padding: 15px 24px;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      transition: opacity 0.15s, transform 0.1s;
+    }
+
+    .btn-submit:active { transform: scale(0.98); }
+    .btn-submit:disabled { opacity: 0.35; cursor: not-allowed; }
+
+    .btn-close {
+      width: 100%;
+      max-width: 480px;
+      background: transparent;
+      color: var(--text-sub);
+      font-family: var(--font-body);
+      font-size: 13px;
+      font-weight: 500;
+      padding: 8px;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 6px;
+      transition: color 0.15s;
+    }
+
+    .btn-close:hover { color: var(--text-main); }
+
+    .count-badge {
+      background: rgba(255,255,255,0.2);
+      border-radius: 20px;
+      padding: 2px 9px;
+      font-size: 13px;
+    }
+
+    /* ===== フェードイン ===== */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    #main-content.visible {
+      animation: fadeUp 0.4s ease both;
+    }
   </style>
 </head>
-<body class="bg-slate-100 font-sans min-height-screen pb-36">
+<body>
 
-  <div id="loading-screen" class="fixed inset-0 bg-slate-100 flex flex-col justify-center items-center z-[100]">
-    <i class="fa-solid fa-spinner animate-spin text-blue-900 text-4xl mb-4"></i>
-    <p class="text-slate-600 font-bold">アクセス権限を確認中...</p>
+  <!-- ローディング -->
+  <div id="loading-screen">
+    <div class="spinner"></div>
+    <p>アクセス権限を確認中...</p>
   </div>
 
-  <div id="gate-screen" class="hidden fixed inset-0 bg-slate-50 flex flex-col justify-center items-center p-6 text-center z-[90]">
-    <div class="bg-white p-8 rounded-2xl shadow-xl max-w-sm w-full border border-slate-200 flex flex-col items-center">
-      <i class="fa-solid fa-circle-xmark text-red-500 text-5xl mb-4"></i>
-      <h2 class="text-xl font-bold text-slate-800 mb-2">アクセス権限がありません</h2>
-      <p class="text-sm text-slate-500 leading-relaxed">
-        このシステムは、登録スタッフ専用です。<br>利用するには管理者に連絡してください。
-      </p>
+  <!-- アクセス拒否 -->
+  <div id="gate-screen">
+    <div class="gate-card">
+      <div class="gate-icon"><i class="fa-solid fa-circle-xmark"></i></div>
+      <h2>アクセス権限がありません</h2>
+      <p>このシステムは登録スタッフ専用です。<br>利用するには管理者に連絡してください。</p>
     </div>
   </div>
 
-  <div id="main-content" class="hidden">
-    <header class="bg-blue-900 text-white p-4 shadow-md sticky top-0 z-50 flex justify-between items-center">
-      <h1 class="text-xl font-bold"><i class="fa-solid fa-calendar-days mr-2"></i>シフト希望提出</h1>
-      <div id="user-info" class="text-sm bg-blue-800 px-3 py-1 rounded">ログイン中...</div>
+  <!-- メイン -->
+  <div id="main-content">
+
+    <header>
+      <div class="header-left">
+        <div class="brand-name">Shintaku Works</div>
+        <div class="brand-sub">Shift Request</div>
+      </div>
+      <div class="user-badge" id="user-info">読込中...</div>
     </header>
 
-    <div class="max-w-md mx-auto m-3 p-3 bg-white rounded-lg shadow-sm grid grid-cols-6 gap-1 text-center text-[10px] font-bold">
-      <div class="p-1 bg-green-500 text-white rounded">緑:予約可</div>
-      <div class="p-1 bg-blue-500 text-white rounded">青:本人予約</div>
-      <div class="p-1 bg-purple-500 text-white rounded">紫:他人予約</div>
-      <div class="p-1 bg-sky-400 text-white rounded">水色:確定</div>
-      <div class="p-1 bg-yellow-500 text-white rounded">黄:変更申請</div>
-      <div class="p-1 bg-red-500 text-white rounded">赤:ロック</div>
+    <!-- 凡例 -->
+    <div class="cal-wrap" style="margin-top:12px;">
+      <div class="legend">
+        <div class="legend-item"><div class="legend-dot" style="background:var(--slot-open)"></div>予約可</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--slot-mine)"></div>自分の予約</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--slot-other)"></div>他人の予約</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--slot-fixed)"></div>確定済み</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--slot-change)"></div>変更申請</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--slot-lock)"></div>ロック</div>
+      </div>
     </div>
 
-    <div class="max-w-md mx-auto p-2 bg-white rounded-lg shadow-md m-3">
-      <div id="calendar"></div>
+    <!-- カレンダー -->
+    <div class="cal-wrap">
+      <div class="cal-card">
+        <div id="calendar"></div>
+      </div>
     </div>
 
-    <div class="fixed bottom-0 left-0 right-0 p-4 bg-white shadow-lg border-t border-slate-200 flex flex-col items-center gap-2 z-50">
-      <button id="submit-btn" class="w-full max-w-md bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-md flex justify-center items-center gap-2 transition disabled:bg-slate-400">
-        <i class="fa-solid fa-paper-plane"></i> シフトを提出する (<span id="select-count">0</span>)
-      </button>
-      <button id="close-btn" class="w-full max-w-md bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-2 rounded-xl text-sm flex justify-center items-center gap-2 transition">
-        <i class="fa-solid fa-xmark"></i> 提出せずに画面を閉じる
-      </button>
-    </div>
+  </div>
+
+  <!-- フッター -->
+  <div class="footer-bar" id="footer-bar" style="display:none;">
+    <button class="btn-submit" id="submit-btn" disabled>
+      <i class="fa-solid fa-paper-plane"></i>
+      シフトを提出する
+      <span class="count-badge" id="select-count">0</span>
+    </button>
+    <button class="btn-close" id="close-btn">
+      <i class="fa-solid fa-xmark"></i> 提出せずに閉じる
+    </button>
   </div>
 
   <script>
-    // ========== 設定 ==========
     const GAS_URL = CONFIG.GAS_URL;
     const LIFF_ID = CONFIG.LIFF_ID_SHIFT;
 
-    const FIXED_DAYS = 7;      
-    const RECRUIT_DAYS = 14;   
+    const FIXED_DAYS   = 7;
+    const RECRUIT_DAYS = 14;
 
-    let userName = ""; 
-    let userId = ""; 
-    let currentSheetData = []; 
+    let userName = "";
+    let userId   = "";
+    let currentSheetData = [];
     let selectedSlots = {};
 
-    // ========== LIFF初期化 ==========
+    // ===== LIFF初期化 =====
     document.addEventListener("DOMContentLoaded", function() {
       liff.init({ liffId: LIFF_ID })
         .then(() => {
@@ -95,259 +429,188 @@
             liff.login();
           } else {
             liff.getProfile().then(profile => {
-              userName = profile.displayName.trim(); 
-              userId = profile.userId; 
+              userName = profile.displayName.trim();
+              userId   = profile.userId;
               checkUserAccess();
-            }).catch(err => {
-              showError("プロフィール取得に失敗しました");
-            });
+            }).catch(() => showError("プロフィール取得に失敗しました"));
           }
-        }).catch(err => {
-          showError("LIFF初期化に失敗しました");
-        });
+        }).catch(() => showError("LIFF初期化に失敗しました"));
     });
 
-    // ========== ユーザーアクセス確認 ==========
+    // ===== ユーザーアクセス確認 =====
     function checkUserAccess() {
       fetch(`${GAS_URL}?action=checkUser&userId=${encodeURIComponent(userId)}`, { method: "GET", redirect: "follow" })
         .then(res => res.json())
         .then(result => {
-          document.getElementById("loading-screen").classList.add("hidden");
-          
+          document.getElementById("loading-screen").style.display = "none";
           if (result.access === "granted") {
-            document.getElementById("main-content").classList.remove("hidden");
+            const mc = document.getElementById("main-content");
+            mc.style.display = "block";
+            mc.classList.add("visible");
+            document.getElementById("footer-bar").style.display = "flex";
             document.getElementById("user-info").innerText = "👤 " + userName;
             initSystem();
           } else {
-            document.getElementById("gate-screen").classList.remove("hidden");
+            document.getElementById("gate-screen").style.display = "flex";
           }
         })
-        .catch(err => {
-          showError("アクセス確認に失敗しました: " + err.message);
-        });
+        .catch(err => showError("アクセス確認に失敗しました: " + err.message));
     }
 
-    // ========== システム初期化 ==========
+    // ===== システム初期化 =====
     function initSystem() {
       fetch(`${GAS_URL}?action=getShift`, { method: "GET", redirect: "follow" })
         .then(res => res.json())
         .then(data => {
           currentSheetData = data;
           renderCalendar();
-        }).catch(err => {
-          showError("シフトデータ取得に失敗しました");
-        });
+        }).catch(() => showError("シフトデータ取得に失敗しました"));
     }
 
-    // ========== カレンダーレンダリング ==========
+    // ===== カレンダーレンダリング =====
     function renderCalendar() {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
 
-      const endOfFixedDate = new Date(today);
-      endOfFixedDate.setDate(endOfFixedDate.getDate() + FIXED_DAYS);
+      const endFixed   = new Date(today); endFixed.setDate(today.getDate() + FIXED_DAYS);
+      const endRecruit = new Date(today); endRecruit.setDate(today.getDate() + FIXED_DAYS + RECRUIT_DAYS);
 
-      const endOfRecruitDate = new Date(today);
-      endOfRecruitDate.setDate(endOfRecruitDate.getDate() + FIXED_DAYS + RECRUIT_DAYS);
+      const calEl = document.getElementById('calendar');
+      calEl.innerHTML = '';
 
-      const calendarEl = document.getElementById('calendar');
-      if (calendarEl.querySelector('.fc-scroller')) {
-        calendarEl.innerHTML = '';
-      }
-
-      const calendar = new FullCalendar.Calendar(calendarEl, {
+      const calendar = new FullCalendar.Calendar(calEl, {
         initialView: 'dayGridMonth',
         locale: 'ja',
         headerToolbar: { left: 'prev', center: 'title', right: 'next' },
         height: 'auto',
-        dayCellContent: function(e) { return e.dayNumberText.replace('日', ''); },
+        dayCellContent: e => e.dayNumberText.replace('日', ''),
 
         dayCellDidMount: function(info) {
-          const y = info.date.getFullYear();
-          const m = String(info.date.getMonth() + 1).padStart(2, '0');
-          const d = String(info.date.getDate()).padStart(2, '0');
-          const dateStr = `${y}-${m}-${d}`;
+          const d = info.date;
+          const dateStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 
-          const cellDate = new Date(info.date);
-          cellDate.setHours(0, 0, 0, 0);
+          const cellDate = new Date(d); cellDate.setHours(0,0,0,0);
+          const isPast      = cellDate < today;
+          const isFixed     = cellDate <= endFixed;
+          const isTooFuture = cellDate > endRecruit;
 
-          const isPast = cellDate < today; 
-          const isFixedPeriod = cellDate <= endOfFixedDate; 
-          const isTooFuture = cellDate > endOfRecruitDate; 
-
-          const eventsContainer = info.el.querySelector('.fc-daygrid-day-events');
-          if (!eventsContainer) return;
-          eventsContainer.innerHTML = '';
+          const container = info.el.querySelector('.fc-daygrid-day-events');
+          if (!container) return;
+          container.innerHTML = '';
 
           ['AM', 'PM'].forEach(slot => {
-            const blockDiv = document.createElement('div');
-            blockDiv.className = 'slot-block';
+            const block = document.createElement('div');
+            block.className = 'slot-block';
 
-            const labelSpan = document.createElement('span');
-            labelSpan.className = 'slot-label-top';
-            labelSpan.innerText = slot;
-            blockDiv.appendChild(labelSpan);
+            const label = document.createElement('span');
+            label.className = 'slot-label';
+            label.innerText = slot;
+            block.appendChild(label);
 
             const btn = document.createElement('div');
-            btn.className = 'slot-btn-box';
+            btn.className = 'slot-btn';
 
-            const match = currentSheetData.find(d => d.date === dateStr && d.slot === slot);
-            
-            const sheetStatus = match && match.status ? String(match.status).trim() : "";
-            const sheetUid = match && match.userId ? String(match.userId).trim() : "";
-            const isMyName = (sheetUid !== "" && sheetUid === userId);
+            const match    = currentSheetData.find(x => x.date === dateStr && x.slot === slot);
+            const sheetSt  = match ? String(match.status || '').trim() : '';
+            const sheetUid = match ? String(match.userId || '').trim() : '';
+            const isMe     = sheetUid !== '' && sheetUid === userId;
+            const key      = `${dateStr}_${slot}`;
 
-            // ★★★ ステータス判定ロジック ★★★
+            // ステータス判定
             if (isPast) {
-              if (sheetStatus === '確定' && isMyName) {
-                btn.classList.add('bg-sky-slot');
-                btn.innerText = '確定';
-                btn.dataset.status = 'confirmed_lock';
+              if (sheetSt === '確定' && isMe) {
+                btn.className += ' slot-fixed'; btn.innerText = '確定'; btn.dataset.s = 'lock';
               } else {
-                btn.classList.add('bg-past-slot');
-                btn.innerText = '終了';  
-                btn.dataset.status = 'past_lock';
+                btn.className += ' slot-past'; btn.innerText = '終了'; btn.dataset.s = 'lock';
               }
-
             } else if (isTooFuture) {
-              btn.classList.add('bg-past-slot');
-              btn.innerText = '期間外';
-              btn.dataset.status = 'future_lock';
-
-            } else if (isFixedPeriod) {
+              btn.className += ' slot-past'; btn.innerText = '期間外'; btn.dataset.s = 'lock';
+            } else if (isFixed) {
               if (match) {
-                if (sheetStatus === '確定' && isMyName) {
-                  btn.classList.add('bg-sky-slot');
-                  btn.innerText = '確定';
-                  btn.dataset.status = 'my_fixed_urgent';
-                } else if (sheetStatus === '変更申請中' && isMyName) {
-                  btn.classList.add('bg-yellow-slot');
-                  btn.innerText = '変更申請';
-                  btn.dataset.status = 'my_fixed_urgent_active';
-                  selectedSlots[`${dateStr}_${slot}`] = { date: dateStr, slot: slot, mode: 'urgent_change' };
+                if (sheetSt === '確定' && isMe) {
+                  btn.className += ' slot-fixed'; btn.innerText = '確定'; btn.dataset.s = 'urgent';
+                } else if (sheetSt === '変更申請中' && isMe) {
+                  btn.className += ' slot-change'; btn.innerText = '変更申請'; btn.dataset.s = 'urgent_active';
+                  selectedSlots[key] = { date: dateStr, slot, mode: 'urgent_change' };
                 } else {
-                  btn.classList.add('bg-red-slot');
-                  btn.innerText = '予約済';
-                  btn.dataset.status = 'other_fixed_lock';
+                  btn.className += ' slot-lock'; btn.innerText = '予約済'; btn.dataset.s = 'lock';
                 }
               } else {
-                btn.classList.add('bg-green-slot');
-                btn.innerText = '予約可';
-                btn.dataset.status = 'available';
+                btn.className += ' slot-open'; btn.innerText = '予約可'; btn.dataset.s = 'available';
               }
-
             } else {
               if (match) {
-                if (sheetStatus === '確定') {
-                  if (isMyName) {
-                    btn.classList.add('bg-sky-slot');
-                    btn.innerText = '確定';
-                    btn.dataset.status = 'confirmed_lock';
-                  } else {
-                    btn.classList.add('bg-red-slot');
-                    btn.innerText = '予約済';
-                    btn.dataset.status = 'other_fixed_lock';
-                  }
+                if (sheetSt === '確定') {
+                  btn.className += isMe ? ' slot-fixed' : ' slot-lock';
+                  btn.innerText = isMe ? '確定' : '予約済';
+                  btn.dataset.s = 'lock';
+                } else if (isMe) {
+                  btn.className += ' slot-mine'; btn.innerText = '選択中'; btn.dataset.s = 'mine';
+                  selectedSlots[key] = { date: dateStr, slot, mode: 'normal' };
                 } else {
-                  if (isMyName) {
-                    btn.classList.add('bg-blue-slot');
-                    btn.innerText = '選択中';
-                    btn.dataset.status = 'already_reserved_by_me';
-                    selectedSlots[`${dateStr}_${slot}`] = { date: dateStr, slot: slot, mode: 'normal' };
-                  } else {
-                    btn.classList.add('bg-purple-slot');
-                    btn.innerText = '他人の予約';
-                    btn.dataset.status = 'other_reserved_lock';
-                  }
+                  btn.className += ' slot-other'; btn.innerText = '他人'; btn.dataset.s = 'lock';
                 }
               } else {
-                btn.classList.add('bg-green-slot');
-                btn.innerText = '予約可';
-                btn.dataset.status = 'available';
+                btn.className += ' slot-open'; btn.innerText = '予約可'; btn.dataset.s = 'available';
               }
             }
 
-            // クリックイベント
-            const status = btn.dataset.status;
-            const clickableStatuses = ['available', 'already_reserved_by_me', 'my_fixed_urgent', 'my_fixed_urgent_active'];
-            
-            if (clickableStatuses.includes(status)) {
-              btn.addEventListener('click', function(e) {
+            // クリック
+            const s = btn.dataset.s;
+            if (['available', 'mine', 'urgent', 'urgent_active'].includes(s)) {
+              btn.addEventListener('click', e => {
                 e.stopPropagation();
-                const key = `${dateStr}_${slot}`;
-
-                if (btn.dataset.status === 'available') {
+                if (s === 'available' || s === 'mine') {
                   if (selectedSlots[key]) {
                     delete selectedSlots[key];
-                    btn.className = 'slot-btn-box bg-green-slot';
-                    btn.innerText = '予約可';
+                    btn.className = 'slot-btn slot-open'; btn.innerText = '予約可';
                   } else {
-                    selectedSlots[key] = { date: dateStr, slot: slot, mode: 'normal' };
-                    btn.className = 'slot-btn-box bg-blue-slot';
-                    btn.innerText = '選択中';
+                    selectedSlots[key] = { date: dateStr, slot, mode: 'normal' };
+                    btn.className = 'slot-btn slot-mine'; btn.innerText = '選択中';
                   }
-                } else if (btn.dataset.status === 'already_reserved_by_me') {
+                } else if (s === 'urgent' || s === 'urgent_active') {
                   if (!selectedSlots[key]) {
-                    selectedSlots[key] = { date: dateStr, slot: slot, mode: 'normal' };
-                    btn.className = 'slot-btn-box bg-blue-slot';
-                    btn.innerText = '選択中';
+                    selectedSlots[key] = { date: dateStr, slot, mode: 'urgent_change' };
+                    btn.className = 'slot-btn slot-change'; btn.innerText = '変更申請';
                   } else {
                     delete selectedSlots[key];
-                    btn.className = 'slot-btn-box bg-green-slot';
-                    btn.innerText = '予約可';
-                  }
-                } else if (btn.dataset.status === 'my_fixed_urgent' || btn.dataset.status === 'my_fixed_urgent_active') {
-                  if (!selectedSlots[key]) {
-                    selectedSlots[key] = { date: dateStr, slot: slot, mode: 'urgent_change' };
-                    btn.className = 'slot-btn-box bg-yellow-slot';
-                    btn.innerText = '変更申請';
-                  } else {
-                    delete selectedSlots[key];
-                    btn.className = 'slot-btn-box bg-sky-slot';
-                    btn.innerText = '確定';
+                    btn.className = 'slot-btn slot-fixed'; btn.innerText = '確定';
                   }
                 }
-                updateSubmitButton();
+                updateBtn();
               });
             }
 
-            blockDiv.appendChild(btn);
-            eventsContainer.appendChild(blockDiv);
+            block.appendChild(btn);
+            container.appendChild(block);
           });
         }
       });
+
       calendar.render();
-      updateSubmitButton(); 
+      updateBtn();
     }
 
-    // ========== 提出ボタン更新 ==========
-    function updateSubmitButton() {
+    // ===== 提出ボタン更新 =====
+    function updateBtn() {
       const count = Object.keys(selectedSlots).length;
       document.getElementById('select-count').innerText = count;
-      document.getElementById('submit-btn').disabled = (count === 0); 
+      document.getElementById('submit-btn').disabled = (count === 0);
     }
 
-    // ========== 閉じるボタン ==========
-    document.getElementById('close-btn').addEventListener('click', function() {
-      if (liff.isInClient()) {
-        liff.closeWindow(); 
-      }
+    // ===== 閉じるボタン =====
+    document.getElementById('close-btn').addEventListener('click', () => {
+      if (liff.isInClient()) liff.closeWindow();
     });
 
-    // ========== 提出ボタン ==========
+    // ===== 提出ボタン =====
     document.getElementById('submit-btn').addEventListener('click', function() {
       const btn = this;
       btn.disabled = true;
-      btn.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> 送信中...`;
+      btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> 送信中...`;
 
-      const payload = {
-        userName: userName,
-        userId: userId, 
-        selections: Object.values(selectedSlots)
-      };
-
-      const encodedData = encodeURIComponent(JSON.stringify(payload));
-      const finalUrl = `${GAS_URL}?action=submitShift&data=${encodedData}`;
+      const payload = { userName, userId, selections: Object.values(selectedSlots) };
+      const finalUrl = `${GAS_URL}?action=submitShift&data=${encodeURIComponent(JSON.stringify(payload))}`;
 
       fetch(finalUrl, { method: "GET", redirect: "follow" })
         .then(res => res.json())
@@ -355,31 +618,30 @@
           if (result.result === "success") {
             alert("シフト希望を提出しました！");
             selectedSlots = {};
-            
             setTimeout(() => {
-              btn.innerHTML = `<i class="fa-solid fa-paper-plane"></i> シフトを提出する`;
-              initSystem(); 
+              btn.innerHTML = `<i class="fa-solid fa-paper-plane"></i> シフトを提出する <span class="count-badge">0</span>`;
+              initSystem();
             }, 600);
           } else {
             alert("エラー: " + (result.message || "不明"));
-            btn.innerHTML = `<i class="fa-solid fa-paper-plane"></i> シフトを提出する`;
+            btn.innerHTML = `<i class="fa-solid fa-paper-plane"></i> シフトを提出する <span class="count-badge" id="select-count">0</span>`;
             btn.disabled = false;
           }
         })
         .catch(err => {
-          alert("送信処理: " + err.message);
+          alert("送信エラー: " + err.message);
           selectedSlots = {};
           setTimeout(() => {
-            btn.innerHTML = `<i class="fa-solid fa-paper-plane"></i> シフトを提出する`;
+            btn.innerHTML = `<i class="fa-solid fa-paper-plane"></i> シフトを提出する <span class="count-badge" id="select-count">0</span>`;
             initSystem();
           }, 600);
         });
     });
 
-    // ========== エラー表示 ==========
-    function showError(message) {
-      document.getElementById("loading-screen").className = "fixed inset-0 bg-slate-100 flex flex-col justify-center items-center z-[100] text-red-600 font-bold p-4 text-center";
-      document.getElementById("loading-screen").innerHTML = "<i class='fa-solid fa-triangle-exclamation text-3xl mb-2'></i><br>" + message;
+    // ===== エラー表示 =====
+    function showError(msg) {
+      const el = document.getElementById("loading-screen");
+      el.innerHTML = `<i class="fa-solid fa-triangle-exclamation" style="font-size:32px;color:#ef4444;margin-bottom:12px;"></i><p style="color:#ef4444;font-weight:700;">${msg}</p>`;
     }
   </script>
 </body>

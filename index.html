@@ -14,28 +14,16 @@
 
   <style>
     :root {
-      --bg: #f0f0ec;
-      --card: #ffffff;
-      --text-main: #1a1a1a;
-      --text-sub: #666;
-      --accent: #1a1a1a;
-      --ok: #1a6644;
-      --ok-bg: #edfaf3;
-      --ok-border: #a3d9bf;
-      --error: #9b1c1c;
-      --error-bg: #fff1f1;
-      --error-border: #f5a8a8;
+      /* CSS変数はconfig.jsから自動適用されます */
       --btn-error: #c0392b;
       --btn-error-hover: #a93226;
-      --brand: #1a1a1a;
-      --divider: #e8e8e4;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
       background: var(--bg);
-      font-family: 'DM Sans', -apple-system, sans-serif;
+      font-family: var(--font-body), -apple-system, sans-serif;
       min-height: 100vh;
       display: flex;
       justify-content: center;
@@ -72,7 +60,7 @@
     }
 
     .brand-name {
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display);
       font-size: 22px;
       font-weight: 800;
       letter-spacing: 0.12em;
@@ -134,7 +122,7 @@
 
     /* ステータステキスト */
     #status {
-      font-family: 'Syne', sans-serif;
+      font-family: var(--font-display);
       font-size: 20px;
       font-weight: 700;
       color: var(--text-main);
