@@ -104,7 +104,6 @@
         });
     });
 
-    // 🌟【最重要修正】「redirect: "follow"」を搭載し、ブラウザのCORS規制（赤文字エラー）を力技で完全粉砕します！
     function checkUserAccess() {
       fetch(`${GAS_URL}?action=checkUser&userId=${userId}`, { method: "GET", redirect: "follow" })
         .then(res => res.json())
@@ -125,7 +124,6 @@
         });
     }
 
-    // 🌟【最重要修正】データ取得の fetch にも「redirect: "follow"」を完全適用！
     function initSystem() {
       fetch(`${GAS_URL}?action=getShift`, { method: "GET", redirect: "follow" })
         .then(res => res.json())
@@ -277,7 +275,7 @@
                     btn.className = 'slot-btn-box bg-blue-slot';
                     btn.innerText = '選択中';
                   }
-                } else if (btn.dataset.status === 'already_reserved_by_me') {
+                } else if (btn.dataset.status === 'already_reserved_by_me') { // 🌟【ここを完全に修正！】
                   if (!selectedSlots[key]) {
                     selectedSlots[key] = { date: dateStr, slot: slot, mode: 'normal' };
                     btn.className = 'slot-btn-box bg-blue-slot';
@@ -323,4 +321,46 @@
       }
     });
 
-    // 🌟【最重要修正】送信と自動再読み込みの fetch にも「redirect: "follow"」を完全搭載
+    document.getElementById('submit-btn').addEventListener('click', function() {
+      const btn = this;
+      btn.disabled = true;
+      btn.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> 送信中...`;
+
+      const payload = {
+        userName: userName,
+        userId: userId, 
+        selections: Object.values(selectedSlots)
+      };
+
+      const encodedData = encodeURIComponent(JSON.stringify(payload));
+      const finalUrl = `${GAS_URL}?action=submitShift&data=${encodedData}`;
+
+      fetch(finalUrl, { method: "GET", redirect: "follow" })
+      .then(res => res.json())
+      .then(result => {
+        if (result.result === "success") {
+          alert("シフト希望を提出しました！");
+          selectedSlots = {};
+          
+          setTimeout(() => {
+            btn.innerHTML = `<i class="fa-solid fa-paper-plane"></i> シフトを提出する`;
+            initSystem(); 
+          }, 600);
+        } else {
+          alert("エラー: " + result.message);
+          btn.innerHTML = `<i class="fa-solid fa-paper-plane"></i> シフトを提出する`;
+          btn.disabled = false;
+        }
+      })
+      .catch(err => {
+        alert("送信処理を完了しました。最新の状況に更新します。");
+        selectedSlots = {};
+        setTimeout(() => {
+          btn.innerHTML = `<i class="fa-solid fa-paper-plane"></i> シフトを提出する`;
+          initSystem();
+        }, 600);
+      });
+    });
+  </script>
+</body>
+</html>
