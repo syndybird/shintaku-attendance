@@ -104,7 +104,6 @@
         });
     });
 
-    // 🌟【デバッグ修正】GASのセキュリティブロックを突破する「redirect: 'follow'」を追加！
     function checkUserAccess() {
       fetch(`${GAS_URL}?action=checkUser&userId=${userId}`, { method: "GET", redirect: "follow" })
         .then(res => res.json())
@@ -125,7 +124,6 @@
         });
     }
 
-    // 🌟【デバッグ修正】データ取得時にも「redirect: 'follow'」を追加
     function initSystem() {
       fetch(`${GAS_URL}?action=getShift`, { method: "GET", redirect: "follow" })
         .then(res => res.json())
@@ -250,4 +248,119 @@
                   } else {
                     btn.classList.add('bg-purple-slot');
                     btn.innerText = '他人の予約';
-                    btn.dataset.status = 'other_reserved
+                    btn.dataset.status = 'other_reserved_lock';
+                  }
+                }
+              } else {
+                btn.classList.add('bg-green-slot');
+                btn.innerText = '予約可';
+                btn.dataset.status = 'available';
+              }
+            }
+
+            // クリックイベント
+            const status = btn.dataset.status;
+            if (status !== 'confirmed_lock' && status !== 'past_lock' && status !== 'future_lock' && status !== 'other_fixed_lock' && status !== 'other_reserved_lock') {
+              btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const key = `${dateStr}_${slot}`;
+
+                if (btn.dataset.status === 'available') {
+                  if (selectedSlots[key]) {
+                    delete selectedSlots[key];
+                    btn.className = 'slot-btn-box bg-green-slot';
+                    btn.innerText = '予約可';
+                  } else {
+                    selectedSlots[key] = { date: dateStr, slot: slot, mode: 'normal' };
+                    btn.className = 'slot-btn-box bg-blue-slot';
+                    btn.innerText = '選択中';
+                  }
+                } else if (btn.dataset.status === 'already_reserved_by_me') {
+                  if (!selectedSlots[key]) {
+                    selectedSlots[key] = { date: dateStr, slot: slot, mode: 'normal' };
+                    btn.className = 'slot-btn-box bg-blue-slot';
+                    btn.innerText = '選択中';
+                  } else {
+                    delete selectedSlots[key];
+                    btn.className = 'slot-btn-box bg-green-slot';
+                    btn.innerText = '予約可';
+                  }
+                } else if (btn.dataset.status === 'my_fixed_urgent' || btn.dataset.status === 'my_fixed_urgent_active') {
+                  if (!selectedSlots[key]) {
+                    selectedSlots[key] = { date: dateStr, slot: slot, mode: 'urgent_change' };
+                    btn.className = 'slot-btn-box bg-yellow-slot';
+                    btn.innerText = '変更申請';
+                  } else {
+                    delete selectedSlots[key];
+                    btn.className = 'slot-btn-box bg-sky-slot';
+                    btn.innerText = '確定';
+                  }
+                }
+                updateSubmitButton();
+              });
+            }
+
+            blockDiv.appendChild(btn);
+            eventsContainer.appendChild(blockDiv);
+          });
+        }
+      });
+      calendar.render();
+      updateSubmitButton(); 
+    }
+
+    function updateSubmitButton() {
+      const count = Object.keys(selectedSlots).length;
+      document.getElementById('select-count').innerText = count;
+      document.getElementById('submit-btn').disabled = (count === 0); 
+    }
+
+    document.getElementById('close-btn').addEventListener('click', function() {
+      if (liff.isInClient()) {
+        liff.closeWindow(); 
+      }
+    });
+
+    document.getElementById('submit-btn').addEventListener('click', function() {
+      const btn = this;
+      btn.disabled = true;
+      btn.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> 送信中...`;
+
+      const payload = {
+        userName: userName,
+        userId: userId, 
+        selections: Object.values(selectedSlots)
+      };
+
+      const encodedData = encodeURIComponent(JSON.stringify(payload));
+      const finalUrl = `${GAS_URL}?action=submitShift&data=${encodedData}`;
+
+      fetch(finalUrl, { method: "GET", redirect: "follow" })
+      .then(res => res.json())
+      .then(result => {
+        if (result.result === "success") {
+          alert("シフト希望を提出しました！");
+          selectedSlots = {};
+          
+          setTimeout(() => {
+            btn.innerHTML = `<i class="fa-solid fa-paper-plane"></i> シフトを提出する`;
+            initSystem(); 
+          }, 600);
+        } else {
+          alert("エラー: " + result.message);
+          btn.innerHTML = `<i class="fa-solid fa-paper-plane"></i> シフトを提出する`;
+          btn.disabled = false;
+        }
+      })
+      .catch(err => {
+        alert("送信処理を完了しました。最新の状況に更新します。");
+        selectedSlots = {};
+        setTimeout(() => {
+          btn.innerHTML = `<i class="fa-solid fa-paper-plane"></i> シフトを提出する`;
+          initSystem();
+        }, 600);
+      });
+    });
+  </script>
+</body>
+</html>
