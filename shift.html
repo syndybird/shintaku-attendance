@@ -138,9 +138,10 @@
     }
 
     .month-nav-title {
-      font-family: 'Syne', sans-serif;
-      font-size: 18px; font-weight: 800;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 18px; font-weight: 700;
       color: var(--text);
+      letter-spacing: 0;
     }
 
     .month-nav-sub {
@@ -159,6 +160,31 @@
     }
 
     .nav-btn:hover { background: var(--accent-lt); }
+
+    /* ===== ステータスバッジ ===== */
+    .status-bar {
+      max-width: 480px; margin: 10px auto 0;
+      padding: 0 12px;
+    }
+
+    .status-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 7px 14px; border-radius: 20px;
+      font-size: 12px; font-weight: 700;
+      letter-spacing: 0.03em;
+    }
+
+    .status-submitted {
+      background: var(--accent-lt);
+      color: var(--accent);
+      border: 1px solid var(--accent-bd);
+    }
+
+    .status-none {
+      background: #fef9ec;
+      color: #b45309;
+      border: 1px solid #fcd34d;
+    }
 
     /* ===== サマリーバー ===== */
     .summary-bar {
@@ -375,6 +401,12 @@
       <button class="nav-btn" id="next-month">&#8250;</button>
     </div>
 
+    <div class="status-bar">
+      <div class="status-badge status-none" id="submit-status">
+        📋 未提出
+      </div>
+    </div>
+
     <div class="summary-bar">
       <div class="summary-chip selected" id="chip-off">
         <div class="num" id="count-off">0</div>
@@ -470,19 +502,45 @@
     }
 
     // ===== シフトデータ取得 =====
+    let previousSubmission = {}; // 前回提出済みデータ
+
     function loadShiftData() {
-      fetch(`${GAS_URL}?action=getShift`)
+      fetch(`${GAS_URL}?action=getShift&userId=${encodeURIComponent(userId)}`)
         .then(r => r.json())
         .then(data => {
           confirmedDays = {};
+          previousSubmission = {};
+
           data.forEach(d => {
             if (d.status === "確定" || d.status === "休み確定") {
               confirmedDays[d.date] = d.status;
+            } else if (d.status === "休み希望" && d.userId === userId) {
+              previousSubmission[d.date] = true;
             }
           });
+
+          // 前回提出済みデータをselectedDaysに反映（編集可能）
+          if (Object.keys(selectedDays).length === 0) {
+            selectedDays = { ...previousSubmission };
+          }
+
+          updateStatusBadge();
           renderCalendar();
         })
         .catch(() => renderCalendar());
+    }
+
+    // ===== ステータスバッジ更新 =====
+    function updateStatusBadge() {
+      const badge = document.getElementById('submit-status');
+      const hasSubmission = Object.keys(previousSubmission).length > 0;
+      if (hasSubmission) {
+        badge.className = 'status-badge status-submitted';
+        badge.innerText = `✅ 提出済み（${Object.keys(previousSubmission).length}日）`;
+      } else {
+        badge.className = 'status-badge status-none';
+        badge.innerText = '📋 未提出';
+      }
     }
 
     // ===== カレンダー描画 =====
@@ -599,16 +657,20 @@
 
     document.getElementById('prev-month').addEventListener('click', () => {
       selectedDays = {};
+      previousSubmission = {};
       if (currentMonth === 0) { currentMonth = 11; currentYear--; }
       else { currentMonth--; }
-      renderCalendar();
+      updateStatusBadge();
+      loadShiftData();
     });
 
     document.getElementById('next-month').addEventListener('click', () => {
       selectedDays = {};
+      previousSubmission = {};
       if (currentMonth === 11) { currentMonth = 0; currentYear++; }
       else { currentMonth++; }
-      renderCalendar();
+      updateStatusBadge();
+      loadShiftData();
     });
 
     // ===== 閉じる =====
@@ -622,11 +684,24 @@
       btn.disabled = true;
       btn.innerHTML = `<span>⏳</span> 送信中...`;
 
-      const selections = Object.keys(selectedDays).map(date => ({
-        date: date,
-        slot: "ALL",
-        mode: "off_request"
-      }));
+      // 追加分（新しく選択した日）
+      const additions = Object.keys(selectedDays)
+        .filter(d => !previousSubmission[d])
+        .map(d => ({ date: d, slot: "ALL", mode: "off_request" }));
+
+      // 削除分（前回あったが今回外した日）
+      const cancels = Object.keys(previousSubmission)
+        .filter(d => !selectedDays[d])
+        .map(d => ({ date: d, slot: "ALL", mode: "off_cancel" }));
+
+      const selections = [...additions, ...cancels];
+
+      if (selections.length === 0) {
+        alert("変更がありません。");
+        btn.innerHTML = `<span>🌿</span> 休日希望を提出する <span class="count-badge" id="select-count">${Object.keys(selectedDays).length}</span>`;
+        btn.disabled = false;
+        return;
+      }
 
       const payload = { userName, userId, selections };
       const url = `${GAS_URL}?action=submitShift&data=${encodeURIComponent(JSON.stringify(payload))}`;
