@@ -171,7 +171,13 @@
       const response = await fetch(gasUrl + "?" + params.toString());
       const resData = await response.json();
 
-      if (resData.status === "success") {
+      if (resData.status === "already") {
+        status.innerText = "登録済みです";
+        status.className = "ok";
+        detail.innerHTML = `<span class="msg-line">すでにメンバー登録済みです。</span>`;
+        sessionStorage.removeItem("attendanceType");
+        setTimeout(() => { liff.closeWindow(); }, 2500);
+      } else if (resData.status === "success") {
         status.innerText = "登録完了！";
         status.className = "ok";
         detail.innerHTML = `<span class="msg-line">こんにちは、${displayName}さん。</span><span class="msg-line">メンバー登録が自動完了しました！</span>`;
