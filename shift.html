@@ -8,13 +8,15 @@
   <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  
+  <script src="./config.js"></script>
+
   <style>
     .fc-daygrid-day-events { display: flex; flex-direction: column; gap: 6px; padding: 2px !important; }
     .slot-block { display: flex; flex-direction: column; align-items: center; width: 100%; gap: 1px; }
     .slot-label-top { font-size: 10px; font-weight: 800; color: #000000; text-align: center; line-height: 1; margin-bottom: 2px; }
     .slot-btn-box { width: 100%; text-align: center; padding: 4px 0; font-size: 10px; font-weight: bold; border-radius: 4px; cursor: pointer; user-select: none; transition: all 0.2s; white-space: nowrap; }
 
-    /* カラークラス */
     .bg-green-slot { background-color: #22c55e; color: #ffffff; }  
     .bg-red-slot { background-color: #ef4444; color: #ffffff; cursor: not-allowed; }    
     .bg-blue-slot { background-color: #3b82f6; color: #ffffff; border: 1px solid #1d4ed8; }   
@@ -74,8 +76,9 @@
   </div>
 
   <script>
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbxP7Xw2nUEUhdh8Nqtr7fOo7qz2VcJfOwy83Sh6nGv3NnfxaBpbPMUpskXy8B1wqGg0/exec";
-    const LIFF_ID = "2010136950-3fse6ErK";
+    // 🌟 config.jsから設定を自動取得する形に変更
+    const GAS_URL = CONFIG.GAS_URL;
+    const LIFF_ID = CONFIG.LIFF_ID_SHIFT;
 
     const FIXED_DAYS = 7;      
     const RECRUIT_DAYS = 14;   
@@ -98,7 +101,7 @@
             });
           }
         }).catch(err => {
-          alert("LINEログインの初期化に失敗しました。LINEアプリ内から開き原してください。");
+          alert("LINEログインの初期化に失敗しました。");
         });
     });
 
@@ -113,13 +116,12 @@
             document.getElementById("user-info").innerText = "👤 " + userName;
             initSystem();
           } else {
-            // 知らない人の場合はこの拒否画面を出し、裏のカレンダーやボタンは1ミリも描画しません
             document.getElementById("gate-screen").classList.remove("hidden");
           }
         })
         .catch(err => {
           document.getElementById("loading-screen").className = "fixed inset-0 bg-slate-100 flex flex-col justify-center items-center z-[100] text-red-600 font-bold p-4 text-center";
-          document.getElementById("loading-screen").innerHTML = "<i class='fa-solid fa-triangle-exclamation text-3xl mb-2'></i><br>通信エラーが発生しました。再度お試しください。";
+          document.getElementById("loading-screen").innerHTML = "<i class='fa-solid fa-triangle-exclamation text-3xl mb-2'></i><br>通信エラーが発生しました。";
         });
     }
 
