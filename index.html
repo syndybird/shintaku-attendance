@@ -6,57 +6,268 @@
   <title>SHINTAKU 勤怠</title>
 
   <script src="config.js"></script>
-  <script
-    charset="utf-8"
-    src="https://static.line-scdn.net/liff/edge/2/sdk.js">
-  </script>
+  <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
 
   <style>
-    body { margin: 0; padding: 0; background: #f5f5f5; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-    .wrap { min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 16px; box-sizing: border-box; }
-    .card { width: 100%; max-width: 380px; background: white; border-radius: 16px; padding: 36px 24px; box-sizing: border-box; box-shadow: 0 4px 20px rgba(0,0,0,0.06); text-align: center; }
-    h1 { margin: 0 0 16px; font-size: 24px; font-weight: 700; letter-spacing: -0.5px; }
-    p { margin: 0 0 24px; color: #444; font-size: 15px; line-height: 1.7; word-break: break-all; }
-    .ok { color: #2e7d32; }
-    .error { color: #c62828; }
-    
-    .msg-line { display: block; margin-bottom: 6px; }
-    .msg-line:last-child { margin-bottom: 0; }
-    
-    /* 状況に合わせて色が変わるお知らせバー（初期状態は完全非表示） */
-    .info-bar { padding: 14px; border-radius: 10px; font-weight: bold; margin-bottom: 24px; font-size: 15px; line-height: 1.4; display: none; }
-    
-    /* 成功時の緑バー */
-    .info-bar.bg-green { display: block; background: #e8f5e9; color: #1b5e20; border: 1px solid #a5d6a7; }
-    
-    /* エラー時の赤バー */
-    .info-bar.bg-red { display: block; background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
-    
-    .close-btn { background: #dc2626; color: white; border: none; padding: 16px 24px; font-size: 16px; font-weight: bold; border-radius: 10px; cursor: pointer; width: 100%; display: none; box-shadow: 0 4px 12px rgba(220,38,38,0.15); -webkit-tap-highlight-color: transparent; }
-    .close-btn:active { background: #b91c1c; }
+    :root {
+      --bg: #f0f0ec;
+      --card: #ffffff;
+      --text-main: #1a1a1a;
+      --text-sub: #666;
+      --accent: #1a1a1a;
+      --ok: #1a6644;
+      --ok-bg: #edfaf3;
+      --ok-border: #a3d9bf;
+      --error: #9b1c1c;
+      --error-bg: #fff1f1;
+      --error-border: #f5a8a8;
+      --btn-error: #c0392b;
+      --btn-error-hover: #a93226;
+      --brand: #1a1a1a;
+      --divider: #e8e8e4;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      font-family: 'DM Sans', -apple-system, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    /* 背景の微妙なテクスチャ */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: radial-gradient(circle at 20% 20%, rgba(0,0,0,0.03) 1px, transparent 1px),
+                        radial-gradient(circle at 80% 80%, rgba(0,0,0,0.02) 1px, transparent 1px);
+      background-size: 32px 32px;
+      pointer-events: none;
+    }
+
+    .wrap {
+      width: 100%;
+      max-width: 360px;
+      animation: fadeUp 0.5s ease both;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ブランドヘッダー */
+    .brand {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .brand-name {
+      font-family: 'Syne', sans-serif;
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      color: var(--brand);
+      text-transform: uppercase;
+    }
+
+    .brand-sub {
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.2em;
+      color: var(--text-sub);
+      text-transform: uppercase;
+      margin-top: 2px;
+    }
+
+    /* カード */
+    .card {
+      background: var(--card);
+      border-radius: 20px;
+      padding: 36px 28px 32px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.04), 0 8px 32px rgba(0,0,0,0.06);
+      text-align: center;
+      border: 1px solid var(--divider);
+    }
+
+    /* ローディングアニメーション */
+    .loader {
+      width: 36px;
+      height: 36px;
+      border: 3px solid var(--divider);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 20px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .loader.hidden { display: none; }
+
+    /* アイコン（完了・エラー時） */
+    .icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 20px;
+      font-size: 22px;
+      display: none;
+    }
+
+    .icon.ok  { background: var(--ok-bg); display: flex; }
+    .icon.err { background: var(--error-bg); display: flex; }
+
+    /* ステータステキスト */
+    #status {
+      font-family: 'Syne', sans-serif;
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text-main);
+      letter-spacing: -0.3px;
+      margin-bottom: 8px;
+    }
+
+    #status.ok    { color: var(--ok); }
+    #status.error { color: var(--error); }
+
+    /* 詳細テキスト */
+    #detail {
+      font-size: 14px;
+      color: var(--text-sub);
+      line-height: 1.8;
+      margin-bottom: 20px;
+    }
+
+    .msg-line { display: block; }
+
+    /* 区切り線 */
+    .divider {
+      height: 1px;
+      background: var(--divider);
+      margin: 20px 0;
+      display: none;
+    }
+
+    /* インフォバー */
+    .info-bar {
+      border-radius: 10px;
+      padding: 12px 16px;
+      font-size: 13px;
+      font-weight: 500;
+      line-height: 1.5;
+      display: none;
+      margin-bottom: 20px;
+      letter-spacing: 0.01em;
+    }
+
+    .info-bar.bg-green {
+      display: block;
+      background: var(--ok-bg);
+      color: var(--ok);
+      border: 1px solid var(--ok-border);
+    }
+
+    .info-bar.bg-red {
+      display: block;
+      background: var(--error-bg);
+      color: var(--error);
+      border: 1px solid var(--error-border);
+    }
+
+    /* 閉じるボタン */
+    .close-btn {
+      background: var(--btn-error);
+      color: white;
+      border: none;
+      padding: 15px 24px;
+      font-size: 15px;
+      font-weight: 700;
+      font-family: 'DM Sans', sans-serif;
+      letter-spacing: 0.03em;
+      border-radius: 12px;
+      cursor: pointer;
+      width: 100%;
+      display: none;
+      transition: background 0.15s, transform 0.1s;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .close-btn:active {
+      background: var(--btn-error-hover);
+      transform: scale(0.98);
+    }
+
+    /* フッター */
+    .footer {
+      text-align: center;
+      margin-top: 16px;
+      font-size: 11px;
+      color: #bbb;
+      letter-spacing: 0.08em;
+    }
   </style>
 </head>
 <body>
 
 <div class="wrap">
+
+  <div class="brand">
+    <div class="brand-name">Shintaku Works</div>
+    <div class="brand-sub">Attendance System</div>
+  </div>
+
   <div class="card">
-    <h1 id="status">LINEと通信中...</h1>
+    <div class="loader" id="loader"></div>
+    <div class="icon" id="icon"></div>
+
+    <h1 id="status">通信中...</h1>
     <p id="detail">しばらくお待ちください</p>
-    
+
     <div id="infoBar" class="info-bar"></div>
-    
+
     <button id="closeBtn" class="close-btn" onclick="liff.closeWindow()">画面を閉じる</button>
   </div>
+
+  <div class="footer">SHINTAKU WORKS &copy; 2026</div>
 </div>
 
 <script>
   const myLiffId = CONFIG.LIFF_ID_ATTENDANCE;
-  const gasUrl = CONFIG.GAS_URL;
+  const gasUrl   = CONFIG.GAS_URL;
 
-  const status = document.getElementById("status");
-  const detail = document.getElementById("detail");
-  const infoBar = document.getElementById("infoBar");
-  const closeBtn = document.getElementById("closeBtn");
+  const statusEl  = document.getElementById("status");
+  const detailEl  = document.getElementById("detail");
+  const infoBar   = document.getElementById("infoBar");
+  const closeBtn  = document.getElementById("closeBtn");
+  const loader    = document.getElementById("loader");
+  const iconEl    = document.getElementById("icon");
+
+  function setIcon(type) {
+    iconEl.className = "";
+    loader.classList.add("hidden");
+    if (type === "ok") {
+      iconEl.className = "icon ok";
+      iconEl.innerHTML = "✓";
+    } else if (type === "err") {
+      iconEl.className = "icon err";
+      iconEl.innerHTML = "✕";
+    }
+  }
 
   const params = new URLSearchParams(window.location.search);
   let type = params.get("type");
@@ -78,9 +289,10 @@
     infoBar.style.display = "none";
 
     if (!type) {
-      status.innerText = "設定エラー";
-      status.className = "error";
-      detail.innerHTML = '<span class="msg-line">URLの指定（type）が</span><span class="msg-line">正しくありません。</span>';
+      setIcon("err");
+      statusEl.innerText = "設定エラー";
+      statusEl.className = "error";
+      detailEl.innerHTML = '<span class="msg-line">URLの指定（type）が</span><span class="msg-line">正しくありません。</span>';
       closeBtn.style.display = "block";
       return;
     }
@@ -89,8 +301,8 @@
       await liff.init({ liffId: myLiffId });
 
       if (!liff.isLoggedIn()) {
-        status.innerText = "LINEログイン中...";
-        detail.innerText = "認証画面へ移動します。";
+        statusEl.innerText = "LINEログイン中...";
+        detailEl.innerText = "認証画面へ移動します。";
         liff.login();
         return;
       }
@@ -98,23 +310,23 @@
       const profile = await liff.getProfile();
 
       if (type === "ユーザー登録") {
-        status.innerText = "初期メンバー登録中...";
-        detail.innerText = "LINEの情報を読み込んでいます。";
+        statusEl.innerText = "メンバー登録中...";
+        detailEl.innerText = "LINEの情報を読み込んでいます。";
         await submitRegistration(profile.userId, profile.displayName);
       } else {
-        status.innerText = `${type}データ送信中...`;
-        detail.innerText = "サーバーに送信しています...";
+        statusEl.innerText = `${type}データ送信中...`;
+        detailEl.innerText = "サーバーに送信しています...";
         await sendAttendance(profile.userId);
       }
 
     } catch (err) {
-      status.innerText = "システムエラー";
-      status.className = "error";
-      
+      setIcon("err");
+      statusEl.innerText = "システムエラー";
+      statusEl.className = "error";
       if (err.message.includes("revoked") || err.message.includes("expired")) {
-        detail.innerHTML = '<span class="msg-line">有効期限が切れました。</span><span class="msg-line">もう一度QRコードを</span><span class="msg-line">読み直してください。</span>';
+        detailEl.innerHTML = '<span class="msg-line">有効期限が切れました。</span><span class="msg-line">もう一度QRコードを</span><span class="msg-line">読み直してください。</span>';
       } else {
-        detail.innerText = err.message;
+        detailEl.innerText = err.message;
       }
       closeBtn.style.display = "block";
     }
@@ -123,43 +335,36 @@
   // 打刻送信
   async function sendAttendance(userId) {
     try {
-      const params = new URLSearchParams({ action: "attendance", userId: userId, type: type });
-      const response = await fetch(gasUrl + "?" + params.toString());
-      const resData = await response.json();
+      const p = new URLSearchParams({ action: "attendance", userId: userId, type: type });
+      const response = await fetch(gasUrl + "?" + p.toString());
+      const resData  = await response.json();
 
       if (resData.status === "success") {
-        status.innerText = `${type}処理完了`;
-        status.className = "ok";
-        detail.innerHTML = '<span class="msg-line">間もなく画面が自動で閉じます。</span>';
-        
-        // シンプルな「 : 」区切りに変更
-        infoBar.className = "info-bar bg-green";
-        infoBar.innerText = `記録日時 : ${resData.datetime}`;
-        
+        setIcon("ok");
+        statusEl.innerText = `${type}完了`;
+        statusEl.className = "ok";
+        detailEl.innerHTML = '<span class="msg-line">間もなく画面が自動で閉じます。</span>';
+        infoBar.className  = "info-bar bg-green";
+        infoBar.innerText  = `記録日時 : ${resData.datetime}`;
         sessionStorage.removeItem("attendanceType");
         setTimeout(() => { liff.closeWindow(); }, 2500);
       } else {
-        status.innerText = "処理ができません";
-        status.className = "error";
-        
+        setIcon("err");
+        statusEl.innerText = "処理ができません";
+        statusEl.className = "error";
         let formattedMsg = resData.message.split('。').filter(Boolean).map(msg => `<span class="msg-line">${msg}。</span>`).join('');
-        detail.innerHTML = formattedMsg;
-        
-        // シンプルな「 : 」区切りに変更
+        detailEl.innerHTML = formattedMsg;
         if (resData.lastTime) {
           infoBar.className = "info-bar bg-red";
           infoBar.innerText = `直近の記録 : ${resData.lastTime}`;
-        } else {
-          infoBar.className = "info-bar";
-          infoBar.style.display = "none";
         }
-        
         closeBtn.style.display = "block";
       }
     } catch (err) {
-      status.innerText = "通信エラー";
-      status.className = "error";
-      detail.innerHTML = '<span class="msg-line">打刻サーバーに</span><span class="msg-line">接続できませんでした。</span>';
+      setIcon("err");
+      statusEl.innerText = "通信エラー";
+      statusEl.className = "error";
+      detailEl.innerHTML = '<span class="msg-line">打刻サーバーに</span><span class="msg-line">接続できませんでした。</span>';
       closeBtn.style.display = "block";
     }
   }
@@ -167,32 +372,36 @@
   // 自動ユーザー登録送信
   async function submitRegistration(userId, displayName) {
     try {
-      const params = new URLSearchParams({ action: "register", userId: userId, name: displayName });
-      const response = await fetch(gasUrl + "?" + params.toString());
-      const resData = await response.json();
+      const p = new URLSearchParams({ action: "register", userId: userId, name: displayName });
+      const response = await fetch(gasUrl + "?" + p.toString());
+      const resData  = await response.json();
 
       if (resData.status === "already") {
-        status.innerText = "登録済みです";
-        status.className = "ok";
-        detail.innerHTML = `<span class="msg-line">すでにメンバー登録済みです。</span>`;
+        setIcon("ok");
+        statusEl.innerText = "登録済みです";
+        statusEl.className = "ok";
+        detailEl.innerHTML = `<span class="msg-line">すでにメンバー登録済みです。</span>`;
         sessionStorage.removeItem("attendanceType");
         setTimeout(() => { liff.closeWindow(); }, 2500);
       } else if (resData.status === "success") {
-        status.innerText = "登録完了！";
-        status.className = "ok";
-        detail.innerHTML = `<span class="msg-line">こんにちは、${displayName}さん。</span><span class="msg-line">メンバー登録が自動完了しました！</span>`;
+        setIcon("ok");
+        statusEl.innerText = "登録完了！";
+        statusEl.className = "ok";
+        detailEl.innerHTML = `<span class="msg-line">こんにちは、${displayName}さん。</span><span class="msg-line">メンバー登録が完了しました！</span>`;
         sessionStorage.removeItem("attendanceType");
         setTimeout(() => { liff.closeWindow(); }, 3000);
       } else {
-        status.innerText = "登録の確認";
-        status.className = "error";
-        detail.innerText = resData.message;
+        setIcon("err");
+        statusEl.innerText = "登録の確認";
+        statusEl.className = "error";
+        detailEl.innerText = resData.message;
         closeBtn.style.display = "block";
       }
     } catch (err) {
-      status.innerText = "通信エラー";
-      status.className = "error";
-      detail.innerHTML = '<span class="msg-line">登録サーバーに</span><span class="msg-line">接続できませんでした。</span>';
+      setIcon("err");
+      statusEl.innerText = "通信エラー";
+      statusEl.className = "error";
+      detailEl.innerHTML = '<span class="msg-line">登録サーバーに</span><span class="msg-line">接続できませんでした。</span>';
       closeBtn.style.display = "block";
     }
   }
