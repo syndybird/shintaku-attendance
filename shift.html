@@ -3,10 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>SHINTAKU WORKS シフト予約</title>
+  <title>SHINTAKU WORKS シフト希望</title>
 
   <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <script src="config.js"></script>
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -14,25 +13,40 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
 
   <style>
-    /* CSS変数はconfig.jsから自動適用されます */
+    :root {
+      --bg:        #f4f6f2;
+      --card:      #ffffff;
+      --brand:     #2d4a2d;
+      --brand-mid: #3d6b3d;
+      --accent:    #5a9e5a;
+      --accent-lt: #e8f5e8;
+      --accent-bd: #b8ddb8;
+      --text:      #1a2a1a;
+      --sub:       #6b7f6b;
+      --divider:   #e0e8e0;
+      --off:       #ef4444;
+      --off-lt:    #fff1f1;
+      --off-bd:    #fca5a5;
+      --pending:   #f59e0b;
+      --pending-lt:#fffbeb;
+    }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
       background: var(--bg);
-      font-family: var(--font-body), -apple-system, sans-serif;
+      font-family: 'DM Sans', -apple-system, sans-serif;
       min-height: 100vh;
-      padding-bottom: 120px;
+      padding-bottom: 130px;
     }
 
     body::before {
       content: '';
-      position: fixed;
-      inset: 0;
-      background-image: radial-gradient(circle at 20% 20%, rgba(0,0,0,0.025) 1px, transparent 1px);
-      background-size: 32px 32px;
-      pointer-events: none;
-      z-index: 0;
+      position: fixed; inset: 0;
+      background-image:
+        radial-gradient(circle at 10% 10%, rgba(90,158,90,0.06) 0%, transparent 50%),
+        radial-gradient(circle at 90% 90%, rgba(45,74,45,0.04) 0%, transparent 50%);
+      pointer-events: none; z-index: 0;
     }
 
     /* ===== ローディング ===== */
@@ -47,7 +61,7 @@
     .spinner {
       width: 36px; height: 36px;
       border: 3px solid var(--divider);
-      border-top-color: var(--brand);
+      border-top-color: var(--accent);
       border-radius: 50%;
       animation: spin 0.8s linear infinite;
       margin-bottom: 16px;
@@ -55,161 +69,157 @@
 
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    #loading-screen p {
-      font-size: 13px;
-      color: var(--text-sub);
-      letter-spacing: 0.05em;
-    }
+    #loading-screen p { font-size: 13px; color: var(--sub); }
 
     /* ===== アクセス拒否 ===== */
     #gate-screen {
-      display: none;
-      position: fixed; inset: 0;
+      display: none; position: fixed; inset: 0;
       background: var(--bg);
       justify-content: center; align-items: center;
-      padding: 24px;
-      z-index: 90;
+      padding: 24px; z-index: 90;
     }
 
     .gate-card {
-      background: var(--card);
-      border-radius: 20px;
-      padding: 40px 28px;
-      text-align: center;
-      max-width: 340px;
-      width: 100%;
+      background: var(--card); border-radius: 20px;
+      padding: 40px 28px; text-align: center;
+      max-width: 340px; width: 100%;
       border: 1px solid var(--divider);
       box-shadow: 0 8px 32px rgba(0,0,0,0.06);
     }
 
-    .gate-icon {
-      font-size: 40px;
-      color: #ef4444;
-      margin-bottom: 16px;
-    }
+    .gate-icon { font-size: 40px; color: var(--off); margin-bottom: 16px; }
 
     .gate-card h2 {
-      font-family: var(--font-display);
-      font-size: 18px;
-      font-weight: 800;
-      color: var(--text-main);
-      margin-bottom: 10px;
+      font-family: 'Syne', sans-serif;
+      font-size: 18px; font-weight: 800;
+      color: var(--text); margin-bottom: 10px;
     }
 
-    .gate-card p {
-      font-size: 13px;
-      color: var(--text-sub);
-      line-height: 1.8;
-    }
+    .gate-card p { font-size: 13px; color: var(--sub); line-height: 1.8; }
 
-    /* ===== メインコンテンツ ===== */
+    /* ===== メイン ===== */
     #main-content { display: none; position: relative; z-index: 1; }
 
     /* ===== ヘッダー ===== */
     header {
       background: var(--brand);
-      color: #fff;
-      padding: 16px 20px;
-      position: sticky;
-      top: 0;
-      z-index: 50;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+      padding: 14px 20px;
+      position: sticky; top: 0; z-index: 50;
+      display: flex; justify-content: space-between; align-items: center;
+      box-shadow: 0 2px 12px rgba(45,74,45,0.3);
     }
 
-    .header-left .brand-name {
-      font-size: 11px;
-      font-weight: 500;
-      letter-spacing: 0.15em;
-      color: rgba(255,255,255,0.5);
+    .header-left .brand-small {
+      font-size: 10px; letter-spacing: 0.2em;
+      color: rgba(255,255,255,0.45);
       text-transform: uppercase;
     }
 
-    .header-left .brand-sub {
-      font-family: var(--font-display);
-      font-size: 18px;
-      font-weight: 800;
-      letter-spacing: 0.05em;
-      color: #ffffff;
+    .header-left .brand-main {
+      font-family: 'Syne', sans-serif;
+      font-size: 17px; font-weight: 800;
+      color: #ffffff; letter-spacing: 0.02em;
       margin-top: 2px;
     }
 
     .user-badge {
-      font-size: 12px;
-      font-weight: 500;
+      font-size: 12px; font-weight: 500;
       background: rgba(255,255,255,0.12);
-      padding: 6px 12px;
-      border-radius: 20px;
-      letter-spacing: 0.02em;
+      border: 1px solid rgba(255,255,255,0.2);
+      padding: 6px 12px; border-radius: 20px;
+      color: rgba(255,255,255,0.9);
     }
 
-    /* ===== 凡例 ===== */
-    .legend {
-      max-width: 480px;
-      margin: 12px auto;
-      padding: 12px 16px;
-      background: var(--card);
-      border-radius: 12px;
-      border: 1px solid var(--divider);
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 6px;
-    }
-
-    .legend-item {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 11px;
-      font-weight: 500;
-      color: var(--text-main);
-    }
-
-    .legend-dot {
-      width: 10px; height: 10px;
-      border-radius: 3px;
-      flex-shrink: 0;
-    }
-
-    /* ===== カレンダーラッパー ===== */
-    .cal-wrap {
-      max-width: 480px;
-      margin: 0 auto 12px;
+    /* ===== 月ナビ ===== */
+    .month-nav {
+      max-width: 480px; margin: 14px auto 0;
       padding: 0 12px;
+      display: flex; align-items: center; justify-content: space-between;
     }
+
+    .month-nav-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 18px; font-weight: 800;
+      color: var(--text);
+    }
+
+    .month-nav-sub {
+      font-size: 11px; color: var(--sub);
+      margin-top: 2px; letter-spacing: 0.05em;
+    }
+
+    .nav-btn {
+      background: var(--card);
+      border: 1px solid var(--divider);
+      border-radius: 10px;
+      width: 36px; height: 36px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; font-size: 14px; color: var(--text);
+      transition: background 0.15s;
+    }
+
+    .nav-btn:hover { background: var(--accent-lt); }
+
+    /* ===== サマリーバー ===== */
+    .summary-bar {
+      max-width: 480px; margin: 10px auto 0;
+      padding: 0 12px;
+      display: flex; gap: 8px;
+    }
+
+    .summary-chip {
+      flex: 1; padding: 10px 12px;
+      background: var(--card);
+      border: 1px solid var(--divider);
+      border-radius: 12px;
+      text-align: center;
+    }
+
+    .summary-chip .num {
+      font-family: 'Syne', sans-serif;
+      font-size: 20px; font-weight: 800;
+      color: var(--text);
+    }
+
+    .summary-chip .lbl {
+      font-size: 10px; color: var(--sub);
+      margin-top: 2px; letter-spacing: 0.05em;
+    }
+
+    .summary-chip.selected .num { color: var(--accent); }
+    .summary-chip.selected { border-color: var(--accent-bd); background: var(--accent-lt); }
+
+    /* ===== カレンダーカード ===== */
+    .cal-wrap { max-width: 480px; margin: 10px auto 0; padding: 0 12px; }
 
     .cal-card {
       background: var(--card);
       border-radius: 16px;
       border: 1px solid var(--divider);
-      overflow: hidden;
       box-shadow: 0 2px 12px rgba(0,0,0,0.04);
-      padding: 12px 8px 16px;
+      overflow: hidden;
     }
 
-    /* ===== FullCalendar カスタマイズ ===== */
+    /* ===== FullCalendar ===== */
+    .fc .fc-toolbar { padding: 12px 12px 4px; }
+
     .fc .fc-toolbar-title {
-      font-family: var(--font-display);
-      font-size: 16px !important;
-      font-weight: 800;
-      color: var(--text-main);
+      font-family: 'Syne', sans-serif !important;
+      font-size: 15px !important; font-weight: 800;
+      color: var(--text);
     }
 
     .fc .fc-button {
       background: var(--brand) !important;
       border-color: var(--brand) !important;
       border-radius: 8px !important;
-      font-size: 12px !important;
+      font-size: 11px !important;
       padding: 4px 10px !important;
     }
 
     .fc .fc-col-header-cell-cushion {
-      font-size: 11px;
-      font-weight: 700;
-      color: var(--text-sub);
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
+      font-size: 11px; font-weight: 700;
+      color: var(--sub); letter-spacing: 0.05em;
     }
 
     .fc-day-sat .fc-col-header-cell-cushion,
@@ -218,230 +228,231 @@
     .fc-day-sun .fc-daygrid-day-number { color: #dc2626 !important; font-weight: 700; }
 
     .fc .fc-daygrid-day-number {
-      font-size: 11px;
-      font-weight: 600;
-      color: var(--text-sub);
-      padding: 2px 4px;
+      font-size: 12px; font-weight: 600; color: var(--sub); padding: 4px 6px;
     }
 
-    .fc .fc-daygrid-day-events {
-      display: flex;
-      flex-direction: column;
-      gap: 3px;
-      padding: 2px 2px 4px !important;
-    }
+    .fc .fc-daygrid-day-events { min-height: 28px; }
 
-    /* ===== スロットブロック ===== */
-    .slot-block {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      width: 100%;
-      gap: 1px;
-    }
-
-    .slot-label {
-      font-size: 9px;
-      font-weight: 800;
-      color: var(--text-sub);
-      letter-spacing: 0.05em;
-      line-height: 1;
-      margin-bottom: 1px;
-    }
-
-    .slot-btn {
-      width: 100%;
-      text-align: center;
-      padding: 3px 1px;
-      font-size: 9px;
-      font-weight: 700;
-      border-radius: 5px;
-      cursor: pointer;
+    /* 日付セルのカスタムスタイル */
+    .day-cell {
+      width: 100%; height: 28px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 10px; font-weight: 700;
+      border-radius: 6px; margin: 1px 2px;
+      cursor: pointer; transition: all 0.15s;
       user-select: none;
-      transition: opacity 0.15s, transform 0.1s;
-      white-space: nowrap;
-      letter-spacing: 0.02em;
     }
 
-    .slot-btn:active { transform: scale(0.95); }
+    .day-off {
+      background: var(--off-lt);
+      color: var(--off);
+      border: 1.5px solid var(--off-bd);
+    }
 
-    .slot-open    { background: var(--slot-open);   color: var(--slot-open-txt); }
-    .slot-mine    { background: var(--slot-mine);   color: var(--slot-mine-txt); }
-    .slot-other   { background: var(--slot-other);  color: var(--slot-other-txt); cursor: not-allowed; }
-    .slot-fixed   { background: var(--slot-fixed);  color: var(--slot-fixed-txt); }
-    .slot-change  { background: var(--slot-change); color: var(--slot-change-txt); }
-    .slot-lock    { background: var(--slot-lock);   color: var(--slot-lock-txt); cursor: not-allowed; }
-    .slot-past    { background: var(--slot-past);   color: var(--slot-past-txt); cursor: not-allowed; opacity: 0.7; }
+    .day-off:active { transform: scale(0.95); }
 
-    /* ===== フッターボタン ===== */
+    .day-work {
+      background: transparent;
+      color: transparent;
+    }
+
+    .day-past {
+      background: #f1f5f1;
+      color: #bbb;
+      cursor: not-allowed;
+    }
+
+    .day-confirmed-off {
+      background: var(--off-lt);
+      color: var(--off);
+      border: 1.5px solid var(--off-bd);
+      cursor: not-allowed;
+      opacity: 0.7;
+    }
+
+    .day-confirmed-work {
+      background: var(--accent-lt);
+      color: var(--accent);
+      border: 1.5px solid var(--accent-bd);
+      cursor: not-allowed;
+    }
+
+    /* ===== 凡例 ===== */
+    .legend {
+      max-width: 480px; margin: 10px auto 0;
+      padding: 0 12px;
+      display: flex; gap: 12px; flex-wrap: wrap;
+    }
+
+    .legend-item {
+      display: flex; align-items: center; gap: 5px;
+      font-size: 11px; color: var(--sub);
+    }
+
+    .legend-dot {
+      width: 12px; height: 12px; border-radius: 4px;
+    }
+
+    /* ===== フッター ===== */
     .footer-bar {
-      position: fixed;
-      bottom: 0; left: 0; right: 0;
+      position: fixed; bottom: 0; left: 0; right: 0;
       background: var(--card);
       border-top: 1px solid var(--divider);
-      padding: 12px 16px 20px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 8px;
-      z-index: 50;
+      padding: 12px 16px 24px;
+      display: flex; flex-direction: column;
+      align-items: center; gap: 8px; z-index: 50;
+      box-shadow: 0 -4px 20px rgba(0,0,0,0.06);
     }
 
     .btn-submit {
-      width: 100%;
-      max-width: 480px;
+      width: 100%; max-width: 480px;
       background: var(--brand);
       color: #fff;
-      font-family: var(--font-body);
-      font-size: 15px;
-      font-weight: 700;
-      letter-spacing: 0.03em;
-      padding: 15px 24px;
-      border: none;
-      border-radius: 12px;
-      cursor: pointer;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 8px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 15px; font-weight: 700;
+      padding: 15px 24px; border: none;
+      border-radius: 12px; cursor: pointer;
+      display: flex; justify-content: center; align-items: center; gap: 8px;
       transition: opacity 0.15s, transform 0.1s;
+      box-shadow: 0 4px 16px rgba(45,74,45,0.3);
     }
 
     .btn-submit:active { transform: scale(0.98); }
-    .btn-submit:disabled { opacity: 0.35; cursor: not-allowed; }
+    .btn-submit:disabled { opacity: 0.35; cursor: not-allowed; box-shadow: none; }
 
     .btn-close {
-      width: 100%;
-      max-width: 480px;
-      background: transparent;
-      color: var(--text-sub);
-      font-family: var(--font-body);
-      font-size: 13px;
-      font-weight: 500;
-      padding: 8px;
-      border: none;
-      border-radius: 10px;
-      cursor: pointer;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 6px;
-      transition: color 0.15s;
+      width: 100%; max-width: 480px;
+      background: transparent; color: var(--sub);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px; font-weight: 500;
+      padding: 8px; border: none; border-radius: 10px;
+      cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 6px;
     }
-
-    .btn-close:hover { color: var(--text-main); }
 
     .count-badge {
       background: rgba(255,255,255,0.2);
-      border-radius: 20px;
-      padding: 2px 9px;
-      font-size: 13px;
+      border-radius: 20px; padding: 2px 9px; font-size: 13px;
     }
 
-    /* ===== フェードイン ===== */
     @keyframes fadeUp {
       from { opacity: 0; transform: translateY(12px); }
       to   { opacity: 1; transform: translateY(0); }
     }
 
-    #main-content.visible {
-      animation: fadeUp 0.4s ease both;
-    }
+    #main-content.visible { animation: fadeUp 0.4s ease both; }
   </style>
 </head>
 <body>
 
-  <!-- ローディング -->
   <div id="loading-screen">
     <div class="spinner"></div>
-    <p>アクセス権限を確認中...</p>
+    <p>アクセス確認中...</p>
   </div>
 
-  <!-- アクセス拒否 -->
   <div id="gate-screen">
     <div class="gate-card">
-      <div class="gate-icon"><i class="fa-solid fa-circle-xmark"></i></div>
+      <div class="gate-icon">🔒</div>
       <h2>アクセス権限がありません</h2>
-      <p>このシステムは登録スタッフ専用です。<br>利用するには管理者に連絡してください。</p>
+      <p>このシステムは登録スタッフ専用です。<br>管理者に連絡してください。</p>
     </div>
   </div>
 
-  <!-- メイン -->
   <div id="main-content">
-
     <header>
       <div class="header-left">
-        <div class="brand-name">Shintaku Works</div>
-        <div class="brand-sub">シフト希望提出</div>
+        <div class="brand-small">Shintaku Works</div>
+        <div class="brand-main">休日希望提出</div>
       </div>
       <div class="user-badge" id="user-info">読込中...</div>
     </header>
 
-    <!-- 凡例 -->
-    <div class="cal-wrap" style="margin-top:12px;">
-      <div class="legend">
-        <div class="legend-item"><div class="legend-dot" style="background:var(--slot-open)"></div>予約可</div>
-        <div class="legend-item"><div class="legend-dot" style="background:var(--slot-mine)"></div>自分の予約</div>
-        <div class="legend-item"><div class="legend-dot" style="background:var(--slot-other)"></div>他人の予約</div>
-        <div class="legend-item"><div class="legend-dot" style="background:var(--slot-fixed)"></div>確定済み</div>
-        <div class="legend-item"><div class="legend-dot" style="background:var(--slot-change)"></div>変更申請</div>
-        <div class="legend-item"><div class="legend-dot" style="background:var(--slot-lock)"></div>ロック</div>
+    <div class="month-nav">
+      <button class="nav-btn" id="prev-month">&#8249;</button>
+      <div style="text-align:center;">
+        <div class="month-nav-title" id="month-title"></div>
+        <div class="month-nav-sub" id="month-sub"></div>
+      </div>
+      <button class="nav-btn" id="next-month">&#8250;</button>
+    </div>
+
+    <div class="summary-bar">
+      <div class="summary-chip selected" id="chip-off">
+        <div class="num" id="count-off">0</div>
+        <div class="lbl">休み希望日数</div>
+      </div>
+      <div class="summary-chip" id="chip-work">
+        <div class="num" id="count-work">0</div>
+        <div class="lbl">出勤予定日数</div>
       </div>
     </div>
 
-    <!-- カレンダー -->
     <div class="cal-wrap">
       <div class="cal-card">
         <div id="calendar"></div>
       </div>
     </div>
 
+    <div class="legend">
+      <div class="legend-item">
+        <div class="legend-dot" style="background:var(--off-lt);border:1.5px solid var(--off-bd);"></div>休み希望
+      </div>
+      <div class="legend-item">
+        <div class="legend-dot" style="background:var(--accent-lt);border:1.5px solid var(--accent-bd);"></div>出勤確定
+      </div>
+      <div class="legend-item">
+        <div class="legend-dot" style="background:#f1f5f1;border:1px solid #ddd;"></div>選択不可
+      </div>
+    </div>
   </div>
 
-  <!-- フッター -->
   <div class="footer-bar" id="footer-bar" style="display:none;">
     <button class="btn-submit" id="submit-btn" disabled>
-      <i class="fa-solid fa-paper-plane"></i>
-      シフトを提出する
+      <span>🌿</span>
+      休日希望を提出する
       <span class="count-badge" id="select-count">0</span>
     </button>
-    <button class="btn-close" id="close-btn">
-      <i class="fa-solid fa-xmark"></i> 提出せずに閉じる
-    </button>
+    <button class="btn-close" id="close-btn">提出せずに閉じる</button>
   </div>
 
   <script>
     const GAS_URL = CONFIG.GAS_URL;
     const LIFF_ID = CONFIG.LIFF_ID_SHIFT;
 
-    const FIXED_DAYS   = 7;
-    const RECRUIT_DAYS = 14;
-
     let userName = "";
     let userId   = "";
-    let currentSheetData = [];
-    let selectedSlots = {};
+    let selectedDays = {};   // { "2026-06-01": true, ... }
+    let confirmedDays = {};  // GASから取得した確定データ
+    let currentYear, currentMonth;
+    let calendar;
+
+    // 表示月の初期化（来月）
+    const today = new Date();
+    if (today.getDate() >= 25) {
+      // 25日以降は再来月も選べる
+      currentYear  = today.getMonth() === 11 ? today.getFullYear() + 1 : today.getFullYear();
+      currentMonth = today.getMonth() === 11 ? 0 : today.getMonth() + 1;
+    } else {
+      currentYear  = today.getMonth() === 11 ? today.getFullYear() + 1 : today.getFullYear();
+      currentMonth = today.getMonth() === 11 ? 0 : today.getMonth() + 1;
+    }
 
     // ===== LIFF初期化 =====
     document.addEventListener("DOMContentLoaded", function() {
       liff.init({ liffId: LIFF_ID })
         .then(() => {
-          if (!liff.isLoggedIn()) {
-            liff.login();
-          } else {
-            liff.getProfile().then(profile => {
-              userName = profile.displayName.trim();
-              userId   = profile.userId;
-              checkUserAccess();
-            }).catch(() => showError("プロフィール取得に失敗しました"));
-          }
+          if (!liff.isLoggedIn()) { liff.login(); return; }
+          liff.getProfile().then(profile => {
+            userName = profile.displayName.trim();
+            userId   = profile.userId;
+            checkUserAccess();
+          }).catch(() => showError("プロフィール取得に失敗しました"));
         }).catch(() => showError("LIFF初期化に失敗しました"));
     });
 
-    // ===== ユーザーアクセス確認 =====
+    // ===== アクセス確認 =====
     function checkUserAccess() {
-      fetch(`${GAS_URL}?action=checkUser&userId=${encodeURIComponent(userId)}`, { method: "GET", redirect: "follow" })
-        .then(res => res.json())
+      fetch(`${GAS_URL}?action=checkUser&userId=${encodeURIComponent(userId)}`)
+        .then(r => r.json())
         .then(result => {
           document.getElementById("loading-screen").style.display = "none";
           if (result.access === "granted") {
@@ -450,39 +461,44 @@
             mc.classList.add("visible");
             document.getElementById("footer-bar").style.display = "flex";
             document.getElementById("user-info").innerText = "👤 " + userName;
-            initSystem();
+            loadShiftData();
           } else {
             document.getElementById("gate-screen").style.display = "flex";
           }
         })
-        .catch(err => showError("アクセス確認に失敗しました: " + err.message));
+        .catch(err => showError("アクセス確認に失敗: " + err.message));
     }
 
-    // ===== システム初期化 =====
-    function initSystem() {
-      fetch(`${GAS_URL}?action=getShift`, { method: "GET", redirect: "follow" })
-        .then(res => res.json())
+    // ===== シフトデータ取得 =====
+    function loadShiftData() {
+      fetch(`${GAS_URL}?action=getShift`)
+        .then(r => r.json())
         .then(data => {
-          currentSheetData = data;
+          confirmedDays = {};
+          data.forEach(d => {
+            if (d.status === "確定" || d.status === "休み確定") {
+              confirmedDays[d.date] = d.status;
+            }
+          });
           renderCalendar();
-        }).catch(() => showError("シフトデータ取得に失敗しました"));
+        })
+        .catch(() => renderCalendar());
     }
 
-    // ===== カレンダーレンダリング =====
+    // ===== カレンダー描画 =====
     function renderCalendar() {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-
-      const endFixed   = new Date(today); endFixed.setDate(today.getDate() + FIXED_DAYS);
-      const endRecruit = new Date(today); endRecruit.setDate(today.getDate() + FIXED_DAYS + RECRUIT_DAYS);
+      updateMonthDisplay();
 
       const calEl = document.getElementById('calendar');
       calEl.innerHTML = '';
 
-      const calendar = new FullCalendar.Calendar(calEl, {
+      const initialDate = `${currentYear}-${String(currentMonth + 1).padStart(2,'0')}-01`;
+
+      calendar = new FullCalendar.Calendar(calEl, {
         initialView: 'dayGridMonth',
+        initialDate: initialDate,
         locale: 'ja',
-        headerToolbar: { left: 'prev', center: 'title', right: 'next' },
+        headerToolbar: false,
         height: 'auto',
         dayCellContent: e => e.dayNumberText.replace('日', ''),
 
@@ -490,159 +506,158 @@
           const d = info.date;
           const dateStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 
-          const cellDate = new Date(d); cellDate.setHours(0,0,0,0);
-          const isPast      = cellDate < today;
-          const isFixed     = cellDate <= endFixed;
-          const isTooFuture = cellDate > endRecruit;
+          // 当月以外はスキップ
+          if (d.getMonth() !== currentMonth || d.getFullYear() !== currentYear) return;
 
           const container = info.el.querySelector('.fc-daygrid-day-events');
           if (!container) return;
           container.innerHTML = '';
 
-          ['AM', 'PM'].forEach(slot => {
-            const block = document.createElement('div');
-            block.className = 'slot-block';
+          const cellDate = new Date(d); cellDate.setHours(0,0,0,0);
+          const todayDate = new Date(); todayDate.setHours(0,0,0,0);
+          const isPast = cellDate <= todayDate;
 
-            const label = document.createElement('span');
-            label.className = 'slot-label';
-            label.innerText = slot;
-            block.appendChild(label);
+          const btn = document.createElement('div');
+          btn.className = 'day-cell';
 
-            const btn = document.createElement('div');
-            btn.className = 'slot-btn';
-
-            const match    = currentSheetData.find(x => x.date === dateStr && x.slot === slot);
-            const sheetSt  = match ? String(match.status || '').trim() : '';
-            const sheetUid = match ? String(match.userId || '').trim() : '';
-            const isMe     = sheetUid !== '' && sheetUid === userId;
-            const key      = `${dateStr}_${slot}`;
-
-            // ステータス判定
-            if (isPast) {
-              if (sheetSt === '確定' && isMe) {
-                btn.className += ' slot-fixed'; btn.innerText = '確定'; btn.dataset.s = 'lock';
-              } else {
-                btn.className += ' slot-past'; btn.innerText = '終了'; btn.dataset.s = 'lock';
-              }
-            } else if (isTooFuture) {
-              btn.className += ' slot-past'; btn.innerText = '期間外'; btn.dataset.s = 'lock';
-            } else if (isFixed) {
-              if (match) {
-                if (sheetSt === '確定' && isMe) {
-                  btn.className += ' slot-fixed'; btn.innerText = '確定'; btn.dataset.s = 'urgent';
-                } else if (sheetSt === '変更申請中' && isMe) {
-                  btn.className += ' slot-change'; btn.innerText = '変更申請'; btn.dataset.s = 'urgent_active';
-                  selectedSlots[key] = { date: dateStr, slot, mode: 'urgent_change' };
-                } else {
-                  btn.className += ' slot-lock'; btn.innerText = '予約済'; btn.dataset.s = 'lock';
-                }
-              } else {
-                btn.className += ' slot-open'; btn.innerText = '予約可'; btn.dataset.s = 'available';
-              }
+          if (isPast) {
+            btn.classList.add('day-past');
+            btn.innerText = '－';
+          } else if (confirmedDays[dateStr]) {
+            if (confirmedDays[dateStr] === "休み確定") {
+              btn.classList.add('day-confirmed-off');
+              btn.innerText = '休み';
             } else {
-              if (match) {
-                if (sheetSt === '確定') {
-                  btn.className += isMe ? ' slot-fixed' : ' slot-lock';
-                  btn.innerText = isMe ? '確定' : '予約済';
-                  btn.dataset.s = 'lock';
-                } else if (isMe) {
-                  btn.className += ' slot-mine'; btn.innerText = '選択中'; btn.dataset.s = 'mine';
-                  selectedSlots[key] = { date: dateStr, slot, mode: 'normal' };
-                } else {
-                  btn.className += ' slot-other'; btn.innerText = '他人'; btn.dataset.s = 'lock';
-                }
-              } else {
-                btn.className += ' slot-open'; btn.innerText = '予約可'; btn.dataset.s = 'available';
-              }
+              btn.classList.add('day-confirmed-work');
+              btn.innerText = '確定';
             }
+          } else if (selectedDays[dateStr]) {
+            btn.classList.add('day-off');
+            btn.innerText = '休み';
+            btn.addEventListener('click', e => { e.stopPropagation(); toggleDay(dateStr, btn); });
+          } else {
+            btn.classList.add('day-work');
+            btn.innerText = '';
+            btn.addEventListener('click', e => { e.stopPropagation(); toggleDay(dateStr, btn); });
+          }
 
-            // クリック
-            const s = btn.dataset.s;
-            if (['available', 'mine', 'urgent', 'urgent_active'].includes(s)) {
-              btn.addEventListener('click', e => {
-                e.stopPropagation();
-                if (s === 'available' || s === 'mine') {
-                  if (selectedSlots[key]) {
-                    delete selectedSlots[key];
-                    btn.className = 'slot-btn slot-open'; btn.innerText = '予約可';
-                  } else {
-                    selectedSlots[key] = { date: dateStr, slot, mode: 'normal' };
-                    btn.className = 'slot-btn slot-mine'; btn.innerText = '選択中';
-                  }
-                } else if (s === 'urgent' || s === 'urgent_active') {
-                  if (!selectedSlots[key]) {
-                    selectedSlots[key] = { date: dateStr, slot, mode: 'urgent_change' };
-                    btn.className = 'slot-btn slot-change'; btn.innerText = '変更申請';
-                  } else {
-                    delete selectedSlots[key];
-                    btn.className = 'slot-btn slot-fixed'; btn.innerText = '確定';
-                  }
-                }
-                updateBtn();
-              });
-            }
-
-            block.appendChild(btn);
-            container.appendChild(block);
-          });
+          container.appendChild(btn);
         }
       });
 
       calendar.render();
-      updateBtn();
+      updateSummary();
+      updateSubmitBtn();
+    }
+
+    // ===== 日付トグル =====
+    function toggleDay(dateStr, btn) {
+      if (selectedDays[dateStr]) {
+        delete selectedDays[dateStr];
+        btn.classList.remove('day-off');
+        btn.classList.add('day-work');
+        btn.innerText = '';
+      } else {
+        selectedDays[dateStr] = true;
+        btn.classList.remove('day-work');
+        btn.classList.add('day-off');
+        btn.innerText = '休み';
+      }
+      updateSummary();
+      updateSubmitBtn();
+    }
+
+    // ===== サマリー更新 =====
+    function updateSummary() {
+      const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+      const offCount = Object.keys(selectedDays).filter(d => {
+        const dt = new Date(d);
+        return dt.getMonth() === currentMonth && dt.getFullYear() === currentYear;
+      }).length;
+      const workCount = daysInMonth - offCount;
+
+      document.getElementById('count-off').innerText  = offCount;
+      document.getElementById('count-work').innerText = workCount;
     }
 
     // ===== 提出ボタン更新 =====
-    function updateBtn() {
-      const count = Object.keys(selectedSlots).length;
+    function updateSubmitBtn() {
+      const count = Object.keys(selectedDays).length;
       document.getElementById('select-count').innerText = count;
       document.getElementById('submit-btn').disabled = (count === 0);
     }
 
-    // ===== 閉じるボタン =====
+    // ===== 月ナビ =====
+    function updateMonthDisplay() {
+      const monthNames = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+      document.getElementById('month-title').innerText = `${currentYear}年 ${monthNames[currentMonth]}`;
+
+      const deadline = new Date(currentYear, currentMonth, 0); // 前月末
+      deadline.setDate(deadline.getDate() - 2); // 3日前
+      document.getElementById('month-sub').innerText = `締切目安: ${currentYear}年${monthNames[currentMonth === 0 ? 11 : currentMonth - 1]}25日`;
+    }
+
+    document.getElementById('prev-month').addEventListener('click', () => {
+      selectedDays = {};
+      if (currentMonth === 0) { currentMonth = 11; currentYear--; }
+      else { currentMonth--; }
+      renderCalendar();
+    });
+
+    document.getElementById('next-month').addEventListener('click', () => {
+      selectedDays = {};
+      if (currentMonth === 11) { currentMonth = 0; currentYear++; }
+      else { currentMonth++; }
+      renderCalendar();
+    });
+
+    // ===== 閉じる =====
     document.getElementById('close-btn').addEventListener('click', () => {
       if (liff.isInClient()) liff.closeWindow();
     });
 
-    // ===== 提出ボタン =====
+    // ===== 提出 =====
     document.getElementById('submit-btn').addEventListener('click', function() {
       const btn = this;
       btn.disabled = true;
-      btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> 送信中...`;
+      btn.innerHTML = `<span>⏳</span> 送信中...`;
 
-      const payload = { userName, userId, selections: Object.values(selectedSlots) };
-      const finalUrl = `${GAS_URL}?action=submitShift&data=${encodeURIComponent(JSON.stringify(payload))}`;
+      const selections = Object.keys(selectedDays).map(date => ({
+        date: date,
+        slot: "ALL",
+        mode: "off_request"
+      }));
 
-      fetch(finalUrl, { method: "GET", redirect: "follow" })
-        .then(res => res.json())
+      const payload = { userName, userId, selections };
+      const url = `${GAS_URL}?action=submitShift&data=${encodeURIComponent(JSON.stringify(payload))}`;
+
+      fetch(url, { method: "GET", redirect: "follow" })
+        .then(r => r.json())
         .then(result => {
           if (result.result === "success") {
-            alert("シフト希望を提出しました！");
-            selectedSlots = {};
+            alert("休日希望を提出しました！");
+            selectedDays = {};
             setTimeout(() => {
-              btn.innerHTML = `<i class="fa-solid fa-paper-plane"></i> シフトを提出する <span class="count-badge">0</span>`;
-              initSystem();
+              btn.innerHTML = `<span>🌿</span> 休日希望を提出する <span class="count-badge">0</span>`;
+              loadShiftData();
             }, 600);
           } else {
             alert("エラー: " + (result.message || "不明"));
-            btn.innerHTML = `<i class="fa-solid fa-paper-plane"></i> シフトを提出する <span class="count-badge" id="select-count">0</span>`;
+            btn.innerHTML = `<span>🌿</span> 休日希望を提出する <span class="count-badge" id="select-count">0</span>`;
             btn.disabled = false;
           }
         })
         .catch(err => {
           alert("送信エラー: " + err.message);
-          selectedSlots = {};
-          setTimeout(() => {
-            btn.innerHTML = `<i class="fa-solid fa-paper-plane"></i> シフトを提出する <span class="count-badge" id="select-count">0</span>`;
-            initSystem();
-          }, 600);
+          btn.innerHTML = `<span>🌿</span> 休日希望を提出する <span class="count-badge" id="select-count">0</span>`;
+          btn.disabled = false;
         });
     });
 
-    // ===== エラー表示 =====
+    // ===== エラー =====
     function showError(msg) {
-      const el = document.getElementById("loading-screen");
-      el.innerHTML = `<i class="fa-solid fa-triangle-exclamation" style="font-size:32px;color:#ef4444;margin-bottom:12px;"></i><p style="color:#ef4444;font-weight:700;">${msg}</p>`;
+      document.getElementById("loading-screen").innerHTML =
+        `<div style="font-size:32px;margin-bottom:12px;">⚠️</div><p style="color:#ef4444;font-weight:700;">${msg}</p>`;
     }
   </script>
 </body>
