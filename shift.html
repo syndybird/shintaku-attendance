@@ -104,7 +104,7 @@
         });
     });
 
-    // 🌟【通信ブロック解除】redirect: "follow" を追加して、GASの特殊な転送URLにブラウザを自動追従させます
+    // 🌟【通信バグ修正】redirect: 'follow' を追加し、GASのURLリダイレクトにブラウザを確実に追従させます
     function checkUserAccess() {
       fetch(`${GAS_URL}?action=checkUser&userId=${userId}`, { method: "GET", redirect: "follow" })
         .then(res => res.json())
@@ -125,7 +125,7 @@
         });
     }
 
-    // 🌟【通信ブロック解除】ここにも redirect: "follow" を追加
+    // 🌟【通信バグ修正】ここにも redirect: 'follow' を追加
     function initSystem() {
       fetch(`${GAS_URL}?action=getShift`, { method: "GET", redirect: "follow" })
         .then(res => res.json())
@@ -277,7 +277,7 @@
                     btn.className = 'slot-btn-box bg-blue-slot';
                     btn.innerText = '選択中';
                   }
-                } else if (btn.dataset.status === 'already_reserved_by_me') {
+                } else classListIf (btn.dataset.status === 'already_reserved_by_me') {
                   if (!selectedSlots[key]) {
                     selectedSlots[key] = { date: dateStr, slot: slot, mode: 'normal' };
                     btn.className = 'slot-btn-box bg-blue-slot';
@@ -323,7 +323,7 @@
       }
     });
 
-    // 🌟【通信ブロック解除】ここにも redirect: "follow" を追加して安全にデータ送信とリロードを行います
+    // 🌟【通信バグ修正】送信とリロード処理にも redirect: 'follow' を完璧に反映
     document.getElementById('submit-btn').addEventListener('click', function() {
       const btn = this;
       btn.disabled = true;
