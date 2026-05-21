@@ -8,6 +8,7 @@ const CONFIG = {
   GAS_URL: "https://script.google.com/macros/s/AKfycbxP7Xw2nUEUhdh8Nqtr7fOo7qz2VcJfOwy83Sh6nGv3NnfxaBpbPMUpskXy8B1wqGg0/exec",
   LIFF_ID_SHIFT:      "2010136950-3fse6ErK",
   LIFF_ID_ATTENDANCE: "2010136950-uGfcZEcw",
+  LIFF_ID_CALENDAR:    "2010136950-2syR2Qbe",
 
   // ===== デザイン設定 =====
   // ここを変えると全ページのデザインが変わります
