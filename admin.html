@@ -4,350 +4,324 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SHINTAKU WORKS 管理者画面</title>
-
   <script src="config.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
-
   <style>
-    /* CSS変数はconfig.jsから自動適用されます */
+    :root {
+      --bg:      #f4f6f2;
+      --card:    #ffffff;
+      --brand:   #2d4a2d;
+      --accent:  #5a9e5a;
+      --accent-lt: #e8f5e8;
+      --accent-bd: #b8ddb8;
+      --text:    #1a2a1a;
+      --sub:     #6b7f6b;
+      --divider: #e0e8e0;
+      --off:     #ef4444;
+      --off-lt:  #fff1f1;
+      --pending: #f59e0b;
+      --pending-lt: #fffbeb;
+    }
     * { box-sizing: border-box; margin: 0; padding: 0; }
-
-    body {
-      background: var(--bg);
-      font-family: var(--font-body), -apple-system, sans-serif;
-      min-height: 100vh;
-      padding-bottom: 40px;
-    }
-
-    body::before {
-      content: '';
-      position: fixed; inset: 0;
-      background-image: radial-gradient(circle at 20% 20%, rgba(0,0,0,0.025) 1px, transparent 1px);
-      background-size: 32px 32px;
-      pointer-events: none; z-index: 0;
-    }
+    body { background: var(--bg); font-family: 'DM Sans', sans-serif; min-height: 100vh; padding-bottom: 40px; }
 
     header {
-      background: var(--brand);
-      color: #fff;
-      padding: 16px 20px;
-      position: sticky; top: 0; z-index: 50;
+      background: var(--brand); color: #fff;
+      padding: 14px 20px;
       display: flex; justify-content: space-between; align-items: center;
+      box-shadow: 0 2px 12px rgba(45,74,45,0.3);
+    }
+    .brand-small { font-size: 10px; letter-spacing: 0.2em; color: rgba(255,255,255,0.45); text-transform: uppercase; }
+    .brand-main  { font-family: 'Syne', sans-serif; font-size: 17px; font-weight: 800; color: #fff; margin-top: 2px; }
+    .admin-badge { font-size: 11px; font-weight: 700; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.2); padding: 5px 12px; border-radius: 20px; }
+
+    .main { max-width: 680px; margin: 0 auto; padding: 16px 12px; }
+
+    /* 月ナビ */
+    .month-nav {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 14px;
+    }
+    .month-title { font-family: 'DM Sans', sans-serif; font-size: 18px; font-weight: 700; color: var(--text); }
+    .nav-btn {
+      background: var(--card); border: 1px solid var(--divider);
+      border-radius: 10px; width: 36px; height: 36px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; font-size: 16px; color: var(--text);
     }
 
-    .header-left .brand-name {
-      font-family: var(--font-display);
-      font-size: 16px; font-weight: 800;
-      letter-spacing: 0.1em; text-transform: uppercase;
+    /* サマリー */
+    .summary { display: flex; gap: 8px; margin-bottom: 14px; }
+    .summary-chip {
+      flex: 1; padding: 10px 12px; background: var(--card);
+      border: 1px solid var(--divider); border-radius: 12px; text-align: center;
+    }
+    .summary-chip .num { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 800; color: var(--text); }
+    .summary-chip .lbl { font-size: 10px; color: var(--sub); margin-top: 2px; }
+    .summary-chip.alert .num { color: var(--off); }
+    .summary-chip.ok .num { color: var(--accent); }
+
+    /* カード一覧 */
+    .section-title {
+      font-size: 11px; font-weight: 700; letter-spacing: 0.1em;
+      color: var(--sub); text-transform: uppercase; margin-bottom: 8px;
     }
 
-    .header-left .brand-sub {
-      font-size: 10px; letter-spacing: 0.15em;
-      color: rgba(255,255,255,0.5); text-transform: uppercase; margin-top: 1px;
-    }
+    .request-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
 
-    .admin-badge {
-      font-size: 11px; font-weight: 700;
-      background: rgba(255,255,255,0.15);
-      border: 1px solid rgba(255,255,255,0.2);
-      padding: 5px 12px; border-radius: 20px;
-      letter-spacing: 0.05em;
-    }
-
-    .main { max-width: 680px; margin: 0 auto; padding: 16px 12px; position: relative; z-index: 1; }
-
-    /* 凡例 */
-    .legend {
-      background: var(--card);
-      border-radius: 12px;
+    .request-card {
+      background: var(--card); border-radius: 14px;
       border: 1px solid var(--divider);
-      padding: 12px 16px;
-      margin-bottom: 12px;
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 6px;
+      padding: 14px 16px;
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 12px;
     }
 
-    .legend-item {
-      display: flex; align-items: center; gap: 6px;
-      font-size: 11px; font-weight: 500; color: var(--text-main);
+    .request-card .user-icon {
+      width: 36px; height: 36px; flex-shrink: 0;
     }
 
-    .legend-dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+    .request-card .info { flex: 1; }
+    .request-card .info .name { font-size: 13px; font-weight: 700; color: var(--text); }
+    .request-card .info .date { font-size: 12px; color: var(--sub); margin-top: 2px; }
 
-    /* カレンダーカード */
-    .cal-card {
-      background: var(--card);
-      border-radius: 16px;
-      border: 1px solid var(--divider);
-      box-shadow: 0 2px 12px rgba(0,0,0,0.04);
-      padding: 12px 8px 16px;
-      overflow: hidden;
+    .request-card .actions { display: flex; gap: 6px; }
+
+    .btn-approve {
+      background: var(--accent); color: white;
+      border: none; border-radius: 8px;
+      padding: 7px 14px; font-size: 12px; font-weight: 700;
+      cursor: pointer; font-family: 'DM Sans', sans-serif;
+      transition: opacity 0.15s;
+    }
+    .btn-approve:hover { opacity: 0.85; }
+
+    .btn-reject {
+      background: var(--off-lt); color: var(--off);
+      border: 1px solid #fca5a5; border-radius: 8px;
+      padding: 7px 14px; font-size: 12px; font-weight: 700;
+      cursor: pointer; font-family: 'DM Sans', sans-serif;
     }
 
-    /* FullCalendar */
-    .fc .fc-toolbar-title {
-      font-family: var(--font-display) !important;
-      font-size: 16px !important; font-weight: 800;
-      color: var(--text-main);
-    }
-
-    .fc .fc-button {
-      background: var(--brand) !important;
-      border-color: var(--brand) !important;
-      border-radius: 8px !important;
-      font-size: 12px !important;
-      padding: 4px 10px !important;
-    }
-
-    .fc .fc-col-header-cell-cushion {
-      font-size: 11px; font-weight: 700;
-      color: var(--text-sub);
-      text-transform: uppercase; letter-spacing: 0.05em;
-    }
-
-    .fc-day-sat .fc-col-header-cell-cushion,
-    .fc-day-sat .fc-daygrid-day-number { color: #2563eb !important; font-weight: 700; }
-    .fc-day-sun .fc-col-header-cell-cushion,
-    .fc-day-sun .fc-daygrid-day-number { color: #dc2626 !important; font-weight: 700; }
-
-    .fc .fc-daygrid-day-number {
-      font-size: 11px; font-weight: 600;
-      color: var(--text-sub); padding: 2px 4px;
-    }
-
-    .fc .fc-daygrid-day-events {
-      display: flex; flex-direction: column;
-      gap: 3px; padding: 2px 2px 4px !important;
-    }
-
-    /* スロットボタン */
-    .slot-btn {
-      width: 100%;
-      text-align: center;
-      padding: 3px 2px;
-      font-size: 9px; font-weight: 700;
-      border-radius: 5px;
-      cursor: pointer; user-select: none;
-      transition: opacity 0.15s, transform 0.1s;
-      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    }
-
-    .slot-btn:active { transform: scale(0.95); }
-
-    .slot-empty   { background: #f1f5f9; color: #94a3b8; cursor: default; }
-    .slot-booked  { background: #fee2e2; color: #b91c1c; }
-    .slot-conflict{ background: #f3e8ff; color: #6b21a8; }
-    .slot-fixed   { background: var(--slot-fixed); color: var(--slot-fixed-txt); }
-
-    /* モーダル */
-    .modal-overlay {
-      display: none;
-      position: fixed; inset: 0;
-      background: rgba(0,0,0,0.5);
-      backdrop-filter: blur(4px);
-      justify-content: center; align-items: center;
-      z-index: 100; padding: 24px;
-    }
-
-    .modal-overlay.open { display: flex; }
-
-    .modal-card {
-      background: var(--card);
-      border-radius: 20px;
-      max-width: 340px; width: 100%;
-      padding: 32px 24px;
-      border: 1px solid var(--divider);
-      box-shadow: 0 20px 60px rgba(0,0,0,0.15);
-      text-align: center;
-    }
-
-    .modal-title {
-      font-family: var(--font-display);
-      font-size: 18px; font-weight: 800;
-      color: var(--text-main); margin-bottom: 6px;
-    }
-
-    .modal-user {
-      font-size: 13px; color: var(--text-sub); margin-bottom: 24px;
-    }
-
-    .modal-btns { display: flex; flex-direction: column; gap: 10px; }
-
-    .btn {
+    .btn-bulk {
       width: 100%; padding: 14px;
-      font-family: var(--font-body), sans-serif;
-      font-size: 14px; font-weight: 700;
+      background: var(--brand); color: white;
       border: none; border-radius: 12px;
-      cursor: pointer; transition: opacity 0.15s, transform 0.1s;
-      display: flex; justify-content: center; align-items: center; gap: 8px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 15px; font-weight: 700;
+      cursor: pointer; margin-bottom: 8px;
+      box-shadow: 0 4px 16px rgba(45,74,45,0.3);
     }
 
-    .btn:active { transform: scale(0.98); }
-    .btn-confirm { background: var(--slot-fixed); color: var(--slot-fixed-txt); }
-    .btn-delete  { background: #ef4444; color: #fff; }
-    .btn-cancel  { background: var(--bg); color: var(--text-sub); }
+    .empty-state {
+      background: var(--card); border-radius: 14px;
+      border: 1px solid var(--divider);
+      padding: 32px; text-align: center;
+      color: var(--sub); font-size: 13px;
+    }
+
+    /* ユーザーアイコン */
+    .user-svg { width: 36px; height: 36px; }
 
     @keyframes fadeUp {
-      from { opacity: 0; transform: translateY(12px); }
+      from { opacity: 0; transform: translateY(10px); }
       to   { opacity: 1; transform: translateY(0); }
     }
-
     .main { animation: fadeUp 0.4s ease both; }
   </style>
 </head>
 <body>
 
-  <header>
-    <div class="header-left">
-      <div class="brand-name">Shintaku Works</div>
-      <div class="brand-sub">Admin Panel</div>
-    </div>
-    <div class="admin-badge"><i class="fa-solid fa-lock-open" style="margin-right:5px;"></i>管理者専用</div>
-  </header>
+<header>
+  <div>
+    <div class="brand-small">Shintaku Works</div>
+    <div class="brand-main">管理者パネル</div>
+  </div>
+  <div class="admin-badge">🔓 管理者専用</div>
+</header>
 
-  <div class="main">
+<div class="main">
 
-    <!-- 凡例 -->
-    <div class="legend">
-      <div class="legend-item"><div class="legend-dot" style="background:#f1f5f9;border:1px solid #cbd5e1;"></div>空き</div>
-      <div class="legend-item"><div class="legend-dot" style="background:#fee2e2;"></div>予約あり</div>
-      <div class="legend-item"><div class="legend-dot" style="background:#f3e8ff;"></div>競合あり</div>
-      <div class="legend-item"><div class="legend-dot" style="background:var(--slot-fixed);"></div>確定済み</div>
-    </div>
-
-    <!-- カレンダー -->
-    <div class="cal-card">
-      <div id="calendar"></div>
-    </div>
-
+  <div class="month-nav">
+    <button class="nav-btn" id="prev-month">&#8249;</button>
+    <div class="month-title" id="month-title"></div>
+    <button class="nav-btn" id="next-month">&#8250;</button>
   </div>
 
-  <!-- モーダル -->
-  <div class="modal-overlay" id="admin-modal">
-    <div class="modal-card">
-      <div class="modal-title" id="modal-title">日時</div>
-      <div class="modal-user" id="modal-user">申請者: なし</div>
-      <div class="modal-btns">
-        <button class="btn btn-confirm" id="btn-confirm-act">
-          <i class="fa-solid fa-check"></i> 確定にする
-        </button>
-        <button class="btn btn-delete" id="btn-delete-act">
-          <i class="fa-solid fa-trash"></i> 削除して空きに戻す
-        </button>
-        <button class="btn btn-cancel" id="btn-close-act">閉じる</button>
-      </div>
+  <div class="summary">
+    <div class="summary-chip alert">
+      <div class="num" id="count-pending">0</div>
+      <div class="lbl">未確定の希望</div>
+    </div>
+    <div class="summary-chip ok">
+      <div class="num" id="count-confirmed">0</div>
+      <div class="lbl">確定済み</div>
+    </div>
+    <div class="summary-chip">
+      <div class="num" id="count-days">0</div>
+      <div class="lbl">対象日数</div>
     </div>
   </div>
 
-  <script>
-    const GAS_URL = CONFIG.GAS_URL;
-    let currentSheetData = [];
-    let activeTarget = null;
+  <button class="btn-bulk" id="btn-bulk-approve">✅ 未確定の希望をすべて承認する</button>
 
-    document.addEventListener("DOMContentLoaded", initAdminSystem);
+  <div class="section-title">休み希望一覧</div>
+  <div class="request-list" id="request-list">
+    <div class="empty-state">読み込み中...</div>
+  </div>
 
-    function initAdminSystem() {
-      fetch(`${GAS_URL}?action=getShift`)
-        .then(res => res.json())
-        .then(data => {
-          currentSheetData = data;
-          renderAdminCalendar();
-        });
+</div>
+
+<script>
+  const GAS_URL = CONFIG.GAS_URL;
+  let allData = [];
+  let currentYear, currentMonth;
+
+  const today = new Date();
+  currentYear  = today.getMonth() === 11 ? today.getFullYear() + 1 : today.getFullYear();
+  currentMonth = today.getMonth() === 11 ? 0 : today.getMonth() + 1;
+
+  // ユーザー設定（config.jsに後で移動予定）
+  const STAFF = {
+    "Ua54d4388a1b51fe819f406fd9caa4348": { name: "やましん", color: "#2d7d2d", gender: "male" },
+    "TEST_USER_ID": { name: "テスト", color: "#2563eb", gender: "male" },
+  };
+
+  function getSVG(userId, size = 36) {
+    const staff = STAFF[userId] || { color: "#aaa", gender: "male" };
+    const c = staff.color;
+    const dark = c;
+    if (staff.gender === "female") {
+      return `<svg width="${size}" height="${size}" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="28" cy="28" r="28" fill="${c}"/>
+        <circle cx="28" cy="21" r="9" fill="white" opacity="0.95"/>
+        <ellipse cx="28" cy="42" rx="14" ry="10" fill="white" opacity="0.95"/>
+        <ellipse cx="19" cy="22" rx="3.5" ry="7" fill="${dark}" opacity="0.4"/>
+        <ellipse cx="37" cy="22" rx="3.5" ry="7" fill="${dark}" opacity="0.4"/>
+        <ellipse cx="28" cy="14" rx="9" ry="4" fill="${dark}" opacity="0.4"/>
+      </svg>`;
+    } else {
+      return `<svg width="${size}" height="${size}" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="28" cy="28" r="28" fill="${c}"/>
+        <circle cx="28" cy="21" r="9" fill="white" opacity="0.95"/>
+        <ellipse cx="28" cy="42" rx="14" ry="10" fill="white" opacity="0.95"/>
+        <rect x="19" y="15" width="18" height="5" rx="2.5" fill="${dark}" opacity="0.4"/>
+      </svg>`;
     }
+  }
 
-    function renderAdminCalendar() {
-      const calEl = document.getElementById('calendar');
-      calEl.innerHTML = '';
+  function updateMonthTitle() {
+    const months = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+    document.getElementById('month-title').innerText = `${currentYear}年 ${months[currentMonth]}`;
+  }
 
-      const calendar = new FullCalendar.Calendar(calEl, {
-        initialView: 'dayGridMonth',
-        locale: 'ja',
-        headerToolbar: { left: 'prev', center: 'title', right: 'next' },
-        height: 'auto',
-        dayCellContent: e => e.dayNumberText.replace('日', ''),
-
-        dayCellDidMount: function(info) {
-          const d = info.date;
-          const dateStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-
-          const container = info.el.querySelector('.fc-daygrid-day-events');
-          if (!container) return;
-          container.innerHTML = '';
-
-          ['AM', 'PM'].forEach(slot => {
-            const btn = document.createElement('div');
-            btn.className = 'slot-btn';
-
-            const match = currentSheetData.find(x => x.date === dateStr && x.slot === slot);
-
-            if (match) {
-              if (match.status === '確定') {
-                btn.classList.add('slot-fixed');
-                btn.innerText = `✓ ${match.name || match.user || ''}`;
-              } else if (match.status === '競合') {
-                btn.classList.add('slot-conflict');
-                btn.innerText = `! ${slot}`;
-              } else {
-                btn.classList.add('slot-booked');
-                btn.innerText = match.name || match.user || slot;
-              }
-              btn.addEventListener('click', e => {
-                e.stopPropagation();
-                openModal(dateStr, slot, match.name || match.user || '');
-              });
-            } else {
-              btn.classList.add('slot-empty');
-              btn.innerText = '空き';
-            }
-
-            container.appendChild(btn);
-          });
-        }
+  function loadData() {
+    fetch(`${GAS_URL}?action=getShift`)
+      .then(r => r.json())
+      .then(data => {
+        allData = data;
+        renderList();
+      })
+      .catch(() => {
+        document.getElementById('request-list').innerHTML = '<div class="empty-state">データ取得に失敗しました</div>';
       });
-      calendar.render();
+  }
+
+  function renderList() {
+    const monthStr = `${currentYear}-${String(currentMonth + 1).padStart(2,'0')}`;
+    const filtered = allData.filter(d => d.date && d.date.startsWith(monthStr));
+
+    const pending   = filtered.filter(d => d.status === '休み希望');
+    const confirmed = filtered.filter(d => d.status === '休み確定' || d.status === '確定');
+    const days      = [...new Set(filtered.map(d => d.date))].length;
+
+    document.getElementById('count-pending').innerText   = pending.length;
+    document.getElementById('count-confirmed').innerText = confirmed.length;
+    document.getElementById('count-days').innerText      = days;
+
+    const list = document.getElementById('request-list');
+
+    if (filtered.length === 0) {
+      list.innerHTML = '<div class="empty-state">この月の希望はまだありません</div>';
+      return;
     }
 
-    function openModal(date, slot, user) {
-      activeTarget = { date, slot };
-      document.getElementById("modal-title").innerText = `${date}【${slot}】`;
-      document.getElementById("modal-user").innerText = `申請者: ${user}`;
-      document.getElementById("admin-modal").classList.add("open");
-    }
+    // 日付順にソート
+    const sorted = [...filtered].sort((a, b) => a.date.localeCompare(b.date));
 
-    document.getElementById("btn-close-act").addEventListener("click", () => {
-      document.getElementById("admin-modal").classList.remove("open");
-    });
+    list.innerHTML = sorted.map(d => {
+      const staff = STAFF[d.userId] || { name: d.name || '不明', color: '#aaa' };
+      const isPending = d.status === '休み希望';
+      const isConfirmed = d.status === '休み確定' || d.status === '確定';
+      const dateObj = new Date(d.date);
+      const dayNames = ['日','月','火','水','木','金','土'];
+      const dayLabel = `${d.date}（${dayNames[dateObj.getDay()]}）`;
 
-    document.getElementById("admin-modal").addEventListener("click", e => {
-      if (e.target === document.getElementById("admin-modal")) {
-        document.getElementById("admin-modal").classList.remove("open");
-      }
-    });
+      return `
+        <div class="request-card" id="card-${d.date}-${d.slot}">
+          <div class="user-icon">${getSVG(d.userId, 36)}</div>
+          <div class="info">
+            <div class="name">${staff.name}</div>
+            <div class="date">${dayLabel}
+              <span style="margin-left:6px; font-size:10px; padding:2px 7px; border-radius:10px; font-weight:700;
+                background:${isPending ? 'var(--pending-lt)' : 'var(--accent-lt)'};
+                color:${isPending ? 'var(--pending)' : 'var(--accent)'};">
+                ${isPending ? '未確定' : '確定済み'}
+              </span>
+            </div>
+          </div>
+          ${isPending ? `
+          <div class="actions">
+            <button class="btn-approve" onclick="approveOne('${d.date}', '${d.slot}')">承認</button>
+            <button class="btn-reject"  onclick="rejectOne('${d.date}', '${d.slot}')">却下</button>
+          </div>` : ''}
+        </div>
+      `;
+    }).join('');
+  }
 
-    document.getElementById("btn-confirm-act").addEventListener("click", () => executeAction("確定"));
-    document.getElementById("btn-delete-act").addEventListener("click",  () => executeAction("削除"));
+  function approveOne(date, slot) {
+    const payload = { date, slot, status: '休み確定' };
+    const url = `${GAS_URL}?action=adminConfirm&data=${encodeURIComponent(JSON.stringify(payload))}`;
+    fetch(url).then(r => r.json()).then(() => loadData());
+  }
 
-    function executeAction(status) {
-      if (!activeTarget) return;
-      const payload = { date: activeTarget.date, slot: activeTarget.slot, status };
-      const finalUrl = `${GAS_URL}?action=adminConfirm&data=${encodeURIComponent(JSON.stringify(payload))}`;
-      document.getElementById("admin-modal").classList.remove("open");
+  function rejectOne(date, slot) {
+    if (!confirm(`${date} の休み希望を却下しますか？`)) return;
+    const payload = { date, slot, status: '削除' };
+    const url = `${GAS_URL}?action=adminConfirm&data=${encodeURIComponent(JSON.stringify(payload))}`;
+    fetch(url).then(r => r.json()).then(() => loadData());
+  }
 
-      fetch(finalUrl, { method: "GET" })
-        .then(res => res.json())
-        .then(result => {
-          if (result.result === "success") {
-            initAdminSystem();
-          } else {
-            alert("エラー: " + result.message);
-          }
-        });
-    }
-  </script>
+  document.getElementById('btn-bulk-approve').addEventListener('click', () => {
+    const monthStr = `${currentYear}-${String(currentMonth + 1).padStart(2,'0')}`;
+    const pending = allData.filter(d => d.date.startsWith(monthStr) && d.status === '休み希望');
+    if (pending.length === 0) { alert('未確定の希望はありません'); return; }
+    if (!confirm(`${pending.length}件の希望をすべて承認しますか？`)) return;
+
+    Promise.all(pending.map(d => {
+      const payload = { date: d.date, slot: d.slot, status: '休み確定' };
+      const url = `${GAS_URL}?action=adminConfirm&data=${encodeURIComponent(JSON.stringify(payload))}`;
+      return fetch(url).then(r => r.json());
+    })).then(() => loadData());
+  });
+
+  document.getElementById('prev-month').addEventListener('click', () => {
+    if (currentMonth === 0) { currentMonth = 11; currentYear--; }
+    else { currentMonth--; }
+    updateMonthTitle(); renderList();
+  });
+
+  document.getElementById('next-month').addEventListener('click', () => {
+    if (currentMonth === 11) { currentMonth = 0; currentYear++; }
+    else { currentMonth++; }
+    updateMonthTitle(); renderList();
+  });
+
+  updateMonthTitle();
+  loadData();
+</script>
 </body>
 </html>
